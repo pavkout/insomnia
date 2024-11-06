@@ -86,15 +86,19 @@ interface UserProfileResponse {
   family_name: string;
 }
 
-type PersonalPlanType = 'free' | 'individual' | 'team' | 'enterprise' | 'enterprise-member';
+type PersonalPlanType = 'hobby' | 'pro' | 'free' | 'individual' | 'team' | 'enterprise' | 'enterprise-member';
 const formatCurrentPlanType = (type: PersonalPlanType) => {
   switch (type) {
+    case 'hobby':
+      return 'Hobby';
+    case 'pro':
+      return 'Pro';
     case 'free':
-      return 'Free';
+      return 'Hobby';
     case 'individual':
       return 'Individual';
     case 'team':
-      return 'Team';
+      return 'Pro';
     case 'enterprise':
       return 'Enterprise';
     case 'enterprise-member':
