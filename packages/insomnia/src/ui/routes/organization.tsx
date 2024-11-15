@@ -671,7 +671,7 @@ const OrganizationRoute = () => {
                     </Button>
                     <Popover className="min-w-max border select-none text-sm border-solid border-[--hl-sm] shadow-lg bg-[--color-bg] py-2 rounded-md overflow-y-auto max-h-[85vh] focus:outline-none">
                       {currentPlan && Boolean(currentPlan.type) && (
-                        <div className='flex gap-2 justify-between items-center pb-2 px-[--padding-md] border-b border-solid border-[--hl-sm] text-[--color-font] h-[--line-height-xs] w-full text-md whitespace-nowrap'>
+                        <div className='flex gap-2 justify-between items-center pb-2 px-[--padding-md] border-b border-solid border-[--hl-sm] text-[--color-font] h-[--line-height-xs] w-full text-md whitespace-nowrap capitalize'>
                           <span>{currentPlan.planName ?? formatCurrentPlanType(currentPlan.type)} Plan</span>
                           <UpgradeButton currentPlan={currentPlan} />
                         </div>
