@@ -137,9 +137,9 @@ export const OrganizationMemberRolesSelector = (props: PropsForUpdateRole | Prop
         <Button
           isDisabled={isDisabled}
           aria-label="Menu"
-          className="px-[8px] w-full pressed:bg-opacity-40 flex items-center justify-center gap-[8px] rounded-full bg-opacity-20 bg-clip-padding outline-none transition-colors hover:bg-opacity-30 disabled:opacity-40"
+          className="px-[8px] w-full pressed:bg-opacity-40 flex items-center gap-[8px] rounded-full bg-opacity-20 bg-clip-padding outline-none transition-colors hover:bg-opacity-30 disabled:opacity-40"
         >
-          <p className="m-0 text-[12px] font-normal capitalize tracking-[-0.25px]">
+          <p className="flex-1 m-0 text-[12px] font-normal capitalize tracking-[-0.25px] text-center">
             {selectedRoles?.length ? selectedRoles[0] : 'Member'}
           </p>
           <i className="fa fa-caret-down" />
