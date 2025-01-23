@@ -653,10 +653,8 @@ const OrganizationRoute = () => {
                     </span>
                   </Button>
                   <InviteModalContainer
-                    {...{
-                      isOpen: isInviteModalOpen,
-                      setIsOpen: setIsInviteModalOpen,
-                    }}
+                    isOpen={isInviteModalOpen}
+                    setIsOpen={setIsInviteModalOpen}
                   />
                   <MenuTrigger>
                     <Button data-testid='user-dropdown' className="px-1 py-1 flex-shrink-0 flex items-center justify-center gap-2 aria-pressed:bg-[--hl-sm] data-[pressed]:bg-[--hl-sm] rounded-md text-[--color-font] hover:bg-[--hl-xs] focus:ring-inset ring-1 ring-transparent focus:ring-[--hl-md] transition-all text-sm">
