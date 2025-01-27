@@ -10,6 +10,7 @@ import { invariant } from '../../../../utils/invariant';
 import { SegmentEvent } from '../../../analytics';
 import { insomniaFetch } from '../../../insomniaFetch';
 import type { Collaborator, CollaboratorsListLoaderResult } from '../../../routes/invite';
+import { PromptButton } from '../../base/prompt-button';
 import { Icon } from '../../icon';
 import { InviteForm } from './invite-form';
 import { OrganizationMemberRolesSelector, type Role, SELECTOR_TYPE } from './organization-member-roles-selector';
@@ -318,7 +319,7 @@ const MemberListItem: FC<{
             </Button>
           )}
         </div>
-        <div className="flex w-[50px] items-center justify-end gap-[10px]">
+        <div className="flex min-w-[125px] items-center justify-end gap-[10px]">
           {member.metadata.invitationId && (
             <TooltipTrigger delay={0}>
               <Button
@@ -349,50 +350,43 @@ const MemberListItem: FC<{
               </Tooltip>
             </TooltipTrigger>
           )}
-          <TooltipTrigger delay={0}>
-            <Button
-              aria-label={isGroup ? 'Delete team button' : isAcceptedMember ? 'Delete member button' : 'Revoke invite button'}
-              className='w-4 shrink-0 text-right'
-              isDisabled={
-                (!permissionRef.current['delete:membership']
-                  || allRoles.find((r: Role) => r.id === member.metadata.roleId)?.name === 'owner'
-                  || isCurrentUser) && isAcceptedMember
-              }
-              onPress={() => {
-                if (showDeleteConfirmation) {
-                  if (isAcceptedMember) {
-                    deleteMember(organizationId, member.metadata.userId!).then(() => {
-                      onResetCurrentPage();
-                    });
-                  }
-
-                  if (isPendingMember && member.metadata.invitationId) {
-                    revokeOrganizationInvite(organizationId, member.metadata.invitationId).then(() => {
-                      onResetCurrentPage();
-                    });
-                  }
-
-                  if (isGroup) {
-                    console.log('unlinking team');
-                    unlinkTeam(organizationId, member.id).then(() => {
-                      onResetCurrentPage();
-                    });
-                  }
-                } else {
-                  setShowDeleteConfirmation(true);
+          <PromptButton
+            confirmMessage='Confirm'
+            className="px-4 min-w-[12ch] py-1 font-semibold flex items-center justify-center gap-2 aria-pressed:bg-[--hl-sm] rounded-sm text-[--color-font] transition-all text-sm"
+            doneMessage={isAcceptedMember ? 'Removed' : 'Revoked'}
+            disabled={
+              (!permissionRef.current['delete:membership']
+                || allRoles.find((r: Role) => r.id === member.metadata.roleId)?.name === 'owner'
+                || isCurrentUser) && isAcceptedMember
+            }
+            onClick={() => {
+              if (showDeleteConfirmation) {
+                if (isAcceptedMember) {
+                  deleteMember(organizationId, member.metadata.userId!).then(() => {
+                    onResetCurrentPage();
+                  });
                 }
-              }}
-            >
-              <Icon icon="trash" className={`h-4 w-4 ${showDeleteConfirmation ? 'text-[--color-danger]' : ''}`} />
-            </Button>
-            <Tooltip
-              offset={8}
-              placement='left'
-              className="border select-none text-sm max-w-xs border-solid border-[--hl-sm] shadow-lg bg-[--color-bg] text-[--color-font] px-4 py-2 rounded-md overflow-y-auto max-h-[85vh] focus:outline-none"
-            >
-              {showDeleteConfirmation ? 'Confirm' : isGroup || isAcceptedMember ? 'Remove' : 'Revoke'}
-            </Tooltip>
-          </TooltipTrigger>
+
+                if (isPendingMember && member.metadata.invitationId) {
+                  revokeOrganizationInvite(organizationId, member.metadata.invitationId).then(() => {
+                    onResetCurrentPage();
+                  });
+                }
+
+                if (isGroup) {
+                  console.log('unlinking team');
+                  unlinkTeam(organizationId, member.id).then(() => {
+                    onResetCurrentPage();
+                  });
+                }
+              } else {
+                setShowDeleteConfirmation(true);
+              }
+            }}
+          >
+            <Icon icon='trash' />
+            {isAcceptedMember ? 'Remove' : 'Revoke'}
+          </PromptButton>
         </div>
       </ListBoxItem>
     );
