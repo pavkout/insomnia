@@ -16,6 +16,13 @@ interface InviteKey {
   autoLinked: boolean;
 }
 
+interface CollaboratorInviteKey {
+  accountId: string;
+  projectId: string;
+  encKey: string;
+  // autoLinked: boolean;
+}
+
 interface Invite {
   inviteeEmail: string;
   inviteKeys: InviteKey[];
@@ -87,56 +94,11 @@ async function decryptProjectKeys(
   }
 }
 
-type StartAddingTeamsResponse = Record<string, {
-  accountId: string;
-  publicKey: string;
-}>;
-
-async function startAddingTeams({
-  teamIds,
-  organizationId,
-}: {
-  teamIds: string[];
-  organizationId: string;
-}): Promise<StartAddingTeamsResponse> {
-  const response = await insomniaFetch<StartAddingTeamsResponse>({
-    method: 'POST',
-    path: `/v1/desktop/organizations/${organizationId}/collaborators/start-adding-teams`,
-    data: { teamIds },
-    sessionId: await getCurrentSessionId(),
-    onlyResolveOnSuccess: true,
-  });
-
-  return response;
-}
-type TeamProjectKey = {
-  accountId: string;
-} & ProjectKey;
-
-async function finishAddingTeams({
-  teamIds,
-  organizationId,
-  keys,
-}: {
-  teamIds: string[];
-  organizationId: string;
-  keys: Record<string, Record<string, TeamProjectKey>>;
-}): Promise<void> {
-  const response = await insomniaFetch<void>({
-    method: 'POST',
-    path: `/v1/desktop/organizations/${organizationId}/collaborators/finish-adding-teams`,
-    data: { teamIds, keys },
-    sessionId: await getCurrentSessionId(),
-    onlyResolveOnSuccess: true,
-  });
-
-  return response;
-}
-
 interface StartInviteParams {
   teamIds: string[];
   organizationId: string;
   emails: string[];
+  roleId: string;
 }
 
 interface ProjectKey {
@@ -166,67 +128,81 @@ interface MemberProjectKey {
   encSymmetricKey: string;
 }
 
-export async function startInvite({ emails, teamIds, organizationId }: StartInviteParams) {
-  // TODO: do some validations
-  // 1. email length
-  // 2. teamids length
-  if (!teamIds.length) {
-    return;
-  }
-  console.log('emails', emails);
-  //   const memberKeys: MemberProjectKey[] = [];
-  const keyMap = {};
-  let teamKeyMap: StartAddingTeamsResponse;
-  // get the project keys for this org
-  const projectKeysData = await insomniaFetch<ResponseGetMyProjectKeys>({
+interface CollaboratorInstructionItem {
+  accountId: string;
+  publicKey: string; // stringified JSON WEB KEY
+  autoLinked: boolean;
+}
+
+type CollaboratorInstruction = Record<string, CollaboratorInstructionItem>;
+
+export async function startInvite({ emails, teamIds, organizationId, roleId }: StartInviteParams) {
+  // we are merging these endpoints into one as it has grown onto several types over time.
+  // this way, we can also offload the complex logic to the API
+  const instruction = await insomniaFetch<CollaboratorInstruction>({
+    method: 'POST',
+    path: `/v1/desktop/organizations/${organizationId}/collaborators/start-adding`,
+    sessionId: await getCurrentSessionId(),
+    onlyResolveOnSuccess: true,
+    data: { teamIds, emails },
+  });
+
+  const myKeysInfo = await insomniaFetch<ResponseGetMyProjectKeys>({
     method: 'GET',
     path: `/v1/organizations/${organizationId}/my-project-keys`,
     sessionId: await getCurrentSessionId(),
     onlyResolveOnSuccess: true,
   });
 
-  // TODO: wrap it inside the try catch
-  const projectKeys = await decryptProjectKeys(await getPrivateKey(), projectKeysData.projectKeys || []);
-  if (projectKeysData.members?.length) {
+  let memberKeys: MemberProjectKey[] = [];
+  const keyMap: Record<string, string> = {};
+  const projectKeys = await decryptProjectKeys(await getPrivateKey(), myKeysInfo.projectKeys || []);
+  if (myKeysInfo.members?.length) {
     projectKeys.reduce((keyMap: Record<string, string>, key: DecryptedProjectKey) => {
       keyMap[key.projectId] = key.symmetricKey;
       return keyMap;
     }, keyMap);
 
     // This is to reconcile any users in bad standing
-    // memberKeys = projectKeysData.members
-    //   .map((member: ProjectMember) =>
-    //     buildMemberProjectKey(member.accountId, member.projectId, member.publicKey, keyMap[member.projectId]),
-    //   )
-    //   .filter(Boolean) as MemberProjectKey[];
+    memberKeys = myKeysInfo.members
+      .map((member: ProjectMember) =>
+        buildMemberProjectKey(member.accountId, member.projectId, member.publicKey, keyMap[member.projectId]),
+      )
+      .filter(Boolean) as MemberProjectKey[];
   }
 
-  if (teamIds.length > 0) {
-    const teamKeys: Record<string, Record<string, TeamProjectKey>> = {};
-    teamKeyMap = await startAddingTeams({ teamIds, organizationId });
+  // TODO: call the reconcile endpoint
+  console.log({ memberKeys });
 
-    // Object.keys(teamKeyMap).forEach(acctId => {
+  const accountIds = Object.keys(instruction);
+  // TODO: we should do this not in the renderer process but somewhere else, or do it in a worker instead at least
+  // computation is going to be costly when there are lots of project keys.
+  const keys: Record<string, Record<string, CollaboratorInviteKey>> = {};
+  if (projectKeys.length) {
+    for (const acctId in instruction) {
+      if (!keys[acctId]) {
+        keys[acctId] = {};
+      }
 
-    // });
-    for (const [acctId, acctKey] of Object.entries(teamKeyMap)) {
-      projectKeys.forEach(projKey => {
-        const teamMemberProjectKey = buildMemberProjectKey(acctId, projKey.projectId, acctKey.publicKey, projKey.symmetricKey);
-        if (!teamMemberProjectKey) {
-          // throw error
-          return;
+      projectKeys.forEach(key => {
+        const pubKey = instruction[acctId].publicKey;
+        const newKey = buildMemberProjectKey(acctId, key.projectId, pubKey, key.symmetricKey);
+        if (newKey) {
+          keys[acctId][key.projectId] = {
+            accountId: newKey.accountId,
+            projectId: newKey.projectId,
+            encKey: newKey.encSymmetricKey,
+          };
         }
-
-        if (!teamKeys[acctId]) {
-          teamKeys[acctId] = {};
-        }
-        teamKeys[acctId][teamMemberProjectKey.projectId] = {
-          accountId: teamMemberProjectKey.accountId,
-          projectId: teamMemberProjectKey.projectId,
-          encKey: teamMemberProjectKey.encSymmetricKey,
-        };
       });
     }
-
-    await finishAddingTeams({ teamIds, keys: teamKeys, organizationId });
   }
+
+  await insomniaFetch<void>({
+    method: 'POST',
+    path: `/v1/desktop/organizations/${organizationId}/collaborators/finish-adding`,
+    data: { teamIds, keys, accountIds, roleId },
+    sessionId: await getCurrentSessionId(),
+    onlyResolveOnSuccess: true,
+  });
 }
