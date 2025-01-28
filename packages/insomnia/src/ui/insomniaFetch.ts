@@ -13,6 +13,7 @@ interface FetchConfig {
   headers?: Record<string, string>;
   onlyResolveOnSuccess?: boolean;
   timeout?: number;
+  rlKey?: string;
 }
 
 export class ResponseFailError extends Error {
@@ -35,7 +36,17 @@ export async function insomniaFetch<T = void>({
   headers,
   onlyResolveOnSuccess = false,
   timeout = INSOMNIA_FETCH_TIME_OUT,
+  rlKey,
 }: FetchConfig): Promise<T> {
+  let rlToken: string;
+
+  if (rlKey) {
+    const token = sessionStorage.getItem(rlKey);
+    if (token) {
+      rlToken = token;
+    }
+  }
+
   const config: RequestInit = {
     method,
     headers: {
@@ -47,16 +58,27 @@ export async function insomniaFetch<T = void>({
       ...(data ? { 'Content-Type': 'application/json' } : {}),
       ...(organizationId ? { 'X-Insomnia-Org-Id': organizationId } : {}),
       ...(PLAYWRIGHT ? { 'X-Mockbin-Test': 'true' } : {}),
+      ...(rlKey && rlToken ? { 'x-insomnia-ratelimiter': rlToken } : {}),
     },
     ...(data ? { body: JSON.stringify(data) } : {}),
     signal: AbortSignal.timeout(timeout),
   };
+
   if (sessionId === undefined) {
     throw new Error(`No session ID provided to ${method}:${path}`);
   }
 
   try {
     const response = await fetch((origin || getApiBaseURL()) + path, config);
+    if (rlKey) {
+      const rlTok = response.headers.get('x-insomnia-ratelimiter');
+      if (rlTok) {
+        sessionStorage.setItem(rlKey, rlTok);
+      } else {
+        sessionStorage.removeItem(rlKey);
+      }
+    }
+
     const uri = response.headers.get('x-insomnia-command');
     if (uri) {
       window.main.openDeepLink(uri);
