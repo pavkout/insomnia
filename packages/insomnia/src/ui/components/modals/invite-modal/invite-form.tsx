@@ -231,6 +231,7 @@ export const InviteForm = ({
             const emailsToInvite = emails.filter(({ teamId }) => !teamId).map(({ email }) => email);
             const groupsToInvite = emails.filter(({ teamId }) => teamId).map(({ teamId }) => teamId as string);
 
+            console.log({ emailsToInvite });
             handleInvite({
               emails: emailsToInvite,
               groupIds: groupsToInvite,
@@ -341,6 +342,7 @@ async function handleInvite({
     emails,
     teamIds: groupIds ?? [],
     organizationId,
+    roleId: role.id,
   });
 
   console.log({ result, role });
