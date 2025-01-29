@@ -75,6 +75,7 @@ interface PropsForUpdateRole {
   isUserOrganizationOwner: boolean;
   isRBACEnabled: boolean;
   isDisabled?: boolean;
+  className?: string;
   onRoleChange: (role: Role) => Promise<void>;
 }
 
@@ -82,8 +83,9 @@ interface PropsForInvite {
   type: SELECTOR_TYPE.INVITE;
   availableRoles: Role[];
   memberRoles: string[];
-  onRoleChange: (role: Role) => Promise<void>;
   isDisabled?: boolean;
+  className?: string;
+  onRoleChange: (role: Role) => Promise<void>;
 }
 
 export const OrganizationMemberRolesSelector = (props: PropsForUpdateRole | PropsForInvite) => {
@@ -91,8 +93,9 @@ export const OrganizationMemberRolesSelector = (props: PropsForUpdateRole | Prop
     type,
     availableRoles,
     memberRoles,
-    onRoleChange,
     isDisabled,
+    className,
+    onRoleChange,
   } = props;
   const [selectedRoles, setSelectedRoles] = useState<string[]>(memberRoles);
 
@@ -137,7 +140,7 @@ export const OrganizationMemberRolesSelector = (props: PropsForUpdateRole | Prop
         <Button
           isDisabled={isDisabled}
           aria-label="Menu"
-          className="px-[8px] w-full pressed:bg-opacity-40 flex items-center gap-[8px] rounded-full bg-opacity-20 bg-clip-padding outline-none transition-colors hover:bg-opacity-30 disabled:opacity-40"
+          className={`px-[8px] w-full pressed:bg-opacity-40 flex items-center gap-[8px] rounded-full bg-opacity-20 bg-clip-padding outline-none transition-colors hover:bg-opacity-30 disabled:opacity-40 ${className}`}
         >
           <p className="flex-1 m-0 text-[12px] font-normal capitalize tracking-[-0.25px] text-center">
             {selectedRoles?.length ? selectedRoles[0] : 'Member'}
@@ -150,7 +153,7 @@ export const OrganizationMemberRolesSelector = (props: PropsForUpdateRole | Prop
         >
           <Menu
             className="outline-none"
-            items={availableRoles}
+            items={availableRoles.filter(r => r.name !== 'owner')}
             disabledKeys={['owner']}
             aria-label="Select a role for the user"
             onAction={(key: Key) => {
