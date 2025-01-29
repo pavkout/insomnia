@@ -20,7 +20,6 @@ interface CollaboratorInviteKey {
   accountId: string;
   projectId: string;
   encKey: string;
-  // autoLinked: boolean;
 }
 
 interface Invite {
@@ -142,9 +141,9 @@ export async function startInvite({ emails, teamIds, organizationId, roleId }: S
   const instruction = await insomniaFetch<CollaboratorInstruction>({
     method: 'POST',
     path: `/v1/desktop/organizations/${organizationId}/collaborators/start-adding`,
+    data: { teamIds, emails },
     sessionId: await getCurrentSessionId(),
     onlyResolveOnSuccess: true,
-    data: { teamIds, emails },
   });
 
   const myKeysInfo = await insomniaFetch<ResponseGetMyProjectKeys>({
