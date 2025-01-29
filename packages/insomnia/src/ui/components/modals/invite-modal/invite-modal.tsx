@@ -99,7 +99,7 @@ const InviteModal: FC<{
       onOpenChange={setIsOpen}
       className="w-full h-[--visual-viewport-height] fixed z-10 top-0 left-0 flex items-center justify-center bg-[--color-bg] theme--transparent-overlay"
     >
-      <Modal className="fixed top-[100px] w-full max-w-[800px] rounded-md border border-solid border-[--hl-sm] p-[32px] h-fit bg-[--color-bg] text-[--color-font] theme--dialog">
+      <Modal className="fixed top-[100px] w-full max-w-[900px] rounded-md border border-solid border-[--hl-sm] p-[32px] h-fit bg-[--color-bg] text-[--color-font] theme--dialog">
         <Dialog className="outline-none relative">
           {({ close }) => (
             <>
@@ -254,8 +254,8 @@ const MemberListItem: FC<{
           <div className="relative w-[24px] h-[24px]">
             <img src={member.picture} alt="member image" className="w-[24px] h-[24px] rounded-full absolute left-0 bottom-0 top-0 m-auto" />
             {member.metadata.groupTotal !== undefined && (
-              <div className="absolute -bottom-1 -right-1 flex h-3 w-auto min-w-3 items-center justify-center rounded-full border border-white bg-red-500 p-1">
-                <p className="text-[9px] text-[--color-font]">{member.metadata.groupTotal}</p>
+              <div className="absolute -bottom-1 -right-1 flex h-3 w-auto min-w-3 items-center justify-center rounded-full border border-white bg-opacity-100 bg-[rgba(var(--color-danger-rgb),var(--tw-bg-opacity))] text-[--color-font-danger] p-1">
+                <p className="text-[9px]">{member.metadata.groupTotal}</p>
               </div>
             )}
           </div>
