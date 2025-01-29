@@ -229,22 +229,22 @@ export const InviteForm = ({
             const emailsToInvite = emails.filter(({ teamId }) => !teamId).map(({ email }) => email);
             const groupsToInvite = emails.filter(({ teamId }) => teamId).map(({ teamId }) => teamId as string);
 
-            console.log({ emailsToInvite });
             handleInvite({
               emails: emailsToInvite,
               groupIds: groupsToInvite,
               organizationId,
               role: selectedRoleRef.current,
             }).then(
-              inviteeEmails => {
+              () => {
                 window.main.trackSegmentEvent({
                   event: SegmentEvent.inviteMember,
                   properties: {
-                    numberOfInvites: inviteeEmails.length,
-                  },
-                });
+                  numberOfInvites: emailsToInvite.length,
+                  numberOfTeams: groupsToInvite.length,
+                },
+              });
 
-                setEmails((prev: EmailInput[]) => [...prev.filter(({ email, teamId }) => !inviteeEmails.includes(email) || (teamId && !inviteeEmails.includes(teamId)))]);
+                setEmails([]);
                 onInviteCompleted?.();
               },
               (error: Error) => {
@@ -335,15 +335,12 @@ async function handleInvite({
   role: Role;
   enterpriseId?: string;
   }) {
-  const result = await startInvite({
+  await startInvite({
     emails,
     teamIds: groupIds ?? [],
     organizationId,
     roleId: role.id,
   });
-
-  console.log({ result });
-  return [] as string[];
 }
 export interface GroupMemberKey {
   accountId: string;
