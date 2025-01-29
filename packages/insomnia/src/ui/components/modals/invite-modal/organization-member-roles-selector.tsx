@@ -149,7 +149,7 @@ export const OrganizationMemberRolesSelector = (props: PropsForUpdateRole | Prop
         </Button>
         <Popover
           placement="bottom end"
-          className="entering:animate-in entering:fade-in entering:zoom-in-95 exiting:animate-out exiting:fade-out exiting:zoom-out-95 w-56 min-w-[400px] origin-top-left overflow-auto rounded-md p-1 border-solid border-white/20 border bg-[--color-bg]"
+          className="entering:animate-in entering:fade-in entering:zoom-in-95 exiting:animate-out exiting:fade-out exiting:zoom-out-95 w-56 min-w-[300px] origin-top-left overflow-auto rounded-md p-1 border-solid border-white/20 border bg-[--color-bg]"
         >
           <Menu
             className="outline-none"
@@ -166,7 +166,7 @@ export const OrganizationMemberRolesSelector = (props: PropsForUpdateRole | Prop
                 key={item.name}
                 aria-label="Select role"
                 className={({ isDisabled }) =>
-                  `hover:bg-gray-950 group box-border flex w-full cursor-default flex-col rounded-md px-3 py-2 outline-none text-[--color-font] ${isDisabled ? 'opacity-40' : 'cursor-pointer'
+                  `hover:bg-[--hl-xs] group box-border flex w-full cursor-default flex-col rounded-md px-3 py-2 outline-none text-[--color-font] ${isDisabled ? 'opacity-40' : 'cursor-pointer'
                   }`
                 }
               >
