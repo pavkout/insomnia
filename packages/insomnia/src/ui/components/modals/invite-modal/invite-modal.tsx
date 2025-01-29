@@ -370,7 +370,7 @@ const MemberListItem: FC<{
               }
             }}
           >
-            <Icon icon='trash' />
+            <Icon icon={isAcceptedMember || isGroup ? 'trash' : 'square-minus'} />
             {isAcceptedMember || isGroup ? 'Remove' : 'Revoke'}
           </PromptButton>
         </div>
