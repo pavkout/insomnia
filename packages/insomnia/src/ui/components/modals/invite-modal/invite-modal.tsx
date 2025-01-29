@@ -1,7 +1,7 @@
+import { isAfter } from 'date-fns';
 import React, { type FC, type MutableRefObject, useEffect, useRef, useState } from 'react';
-import { Button, Dialog, Group, Heading, Input, ListBox, ListBoxItem, Modal, ModalOverlay, TextField, Tooltip, TooltipTrigger } from 'react-aria-components';
+import { Button, Dialog, Group, Heading, Input, ListBox, ListBoxItem, Modal, ModalOverlay, TextField } from 'react-aria-components';
 import { useFetcher, useParams, useSearchParams } from 'react-router-dom';
-import { useInterval } from 'react-use';
 
 import { getAccountId, getCurrentSessionId } from '../../../../account/session';
 import { getAppWebsiteBaseURL } from '../../../../common/constants';
@@ -160,7 +160,7 @@ const InviteModal: FC<{
                     <ListBox
                       aria-label="Invitation list"
                       items={collaboratorsListLoader.data?.collaborators || []}
-                      className="flex flex-col gap-0"
+                      className="flex flex-col gap-1"
                     >
                       {member =>
                         <MemberListItem
@@ -235,12 +235,7 @@ const MemberListItem: FC<{
     const textValue = member.name ?? member.metadata.email;
     const isCurrentUser = isAcceptedMember && currentUserAccountId === member.metadata.userId;
     const isGroup = member.type === 'group';
-
-    const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
-
-    useInterval(() => {
-      setShowDeleteConfirmation(false);
-    }, 5000);
+  const isPendingInvitationExpired = isPendingMember && member.metadata.expiresAt && isAfter(new Date(), new Date(member.metadata.expiresAt));
 
     useEffect(() => {
       if (updateMemberRoleFetcher.data && !('error' in updateMemberRoleFetcher.data) && updateMemberRoleFetcher.state === 'idle') {
@@ -253,8 +248,7 @@ const MemberListItem: FC<{
       <ListBoxItem
         id={isAcceptedMember ? member.metadata.userId : member.id}
         textValue={textValue}
-        className='flex justify-between outline-none gap-[16px] leading-[36px]'
-
+        className='flex justify-between outline-none gap-[16px] leading-[36px] odd:bg-[--hl-xs] px-2 rounded-sm'
       >
         <div className="grow truncate relative flex items-center gap-3">
           <div className="relative w-[24px] h-[24px]">
@@ -267,12 +261,37 @@ const MemberListItem: FC<{
           </div>
           <div className='flex items-center gap-2'>
             <span>{textValue}</span>
-            {isGroup && <span>(Team)</span>}
-            {isCurrentUser && <span>(You)</span>}
-            {isPendingMember && <span><i className='text-sm'>(Invite sent)</i></span>}
+            {isGroup && <span className="inline-flex items-center rounded-full bg-opacity-100 bg-[rgba(var(--color-surprise-rgb),var(--tw-bg-opacity))] px-1.5 py-0.5 text-xs font-medium text-[--color-font-surprise] ring-1 ring-inset ring-[rgba(var(--color-surprise-rgb),1)]">Team</span>}
+            {isCurrentUser && <span className="inline-flex items-center rounded-full bg-opacity-100 bg-[rgba(var(--color-surprise-rgb),var(--tw-bg-opacity))] px-1.5 py-0.5 text-xs font-medium text-[--color-font-surprise] ring-1 ring-inset ring-[rgba(var(--color-surprise-rgb),1)]">You</span>}
+            {isPendingMember && !isPendingInvitationExpired && <span className="inline-flex items-center rounded-full bg-opacity-100 bg-[rgba(var(--color-warning-rgb),var(--tw-bg-opacity))] px-1.5 py-0.5 text-xs font-medium text-[--color-font-warning] ring-1 ring-inset ring-[rgba(var(--color-warning-rgb),1)]">Invite sent</span>}
+            {isPendingMember && isPendingInvitationExpired && <span className="inline-flex items-center rounded-full bg-opacity-100 bg-[rgba(var(--color-danger-rgb),var(--tw-bg-opacity))] px-1.5 py-0.5 text-xs font-medium text-[--color-font-danger] ring-1 ring-inset ring-[rgba(var(--color-danger-rgb),1)]">Expired</span>}
           </div>
         </div>
-        <div className='w-[88px] shrink-0 flex items-center justify-center'>
+        <div className='flex items-center gap-2'>
+          {member.metadata.invitationId ? (
+            <Button
+              aria-label="Delete member button"
+              isDisabled={reinviting}
+              onPress={async () => {
+                if (member.metadata.invitationId) {
+                  reinviteCollaboratorFetcher.submit({}, {
+                    action: `/organization/${organizationId}/invites/${member.metadata.invitationId}/reinvite`,
+                    method: 'POST',
+                  });
+                }
+              }}
+              className="flex items-center gap-2 min-w-[75px] py-1 px-2 font-semibold aria-pressed:bg-[--hl-sm] text-[--color-font] transition-all text-sm"
+            >
+              {reinviting ? (
+                <Icon icon="spinner" className='fa-spin fa-1x' />
+              ) : (
+                <Icon icon="paper-plane" />
+              )}
+              Resend
+            </Button>
+          ) : (
+            <div className='flex h-[25px] min-w-[75px] cursor-pointer items-center justify-center' />
+          )}
           {member.type !== 'group' && (
             <OrganizationMemberRolesSelector
               type={SELECTOR_TYPE.UPDATE}
@@ -283,6 +302,7 @@ const MemberListItem: FC<{
               isRBACEnabled={Boolean(orgFeatures?.features.orgBasicRbac?.enabled)}
               isUserOrganizationOwner={isCurrentUserOrganizationOwner}
               hasPermissionToChangeRoles={permissionRef.current['update:membership']}
+              className="min-w-[88px] flex items-center gap-2 h-6"
               onRoleChange={async role => {
                 if (isAcceptedMember) {
                   updateMemberRoleFetcher.submit({
@@ -305,7 +325,7 @@ const MemberListItem: FC<{
           {member.type === 'group' && (
             <Button
               aria-label="Manage collaborators"
-              className="pressed:bg-opacity-40 flex gap-2 py-0.5 px-2 text-[--color-font-surprise] bg-opacity-100 bg-[rgba(var(--color-surprise-rgb),var(--tw-bg-opacity))] cursor-pointer items-center justify-center rounded-full bg-clip-padding outline-none hover:bg-opacity-80 focus-visible:ring-2 focus-visible:ring-white/75 transition-all text-sm"
+              className="min-w-[88px] pressed:bg-opacity-40 flex gap-2 p-1 text-[--color-font-surprise] bg-opacity-100 bg-[rgba(var(--color-surprise-rgb),var(--tw-bg-opacity))] cursor-pointer items-center justify-center rounded-sm bg-clip-padding outline-none hover:bg-opacity-80 focus-visible:ring-2 focus-visible:ring-white/75 transition-all text-sm"
               onPress={() => {
                 window.main.openInBrowser(
                   `${getAppWebsiteBaseURL()}/app/enterprise/team/${member.metadata.groupId}`,
@@ -318,41 +338,9 @@ const MemberListItem: FC<{
               </p>
             </Button>
           )}
-        </div>
-        <div className="flex min-w-[125px] items-center justify-end gap-[10px]">
-          {member.metadata.invitationId && (
-            <TooltipTrigger delay={0}>
-              <Button
-                aria-label="Delete member button"
-                isDisabled={reinviting}
-                onPress={async () => {
-                  if (member.metadata.invitationId) {
-                    reinviteCollaboratorFetcher.submit({}, {
-                      action: `/organization/${organizationId}/invites/${member.metadata.invitationId}/reinvite`,
-                      method: 'POST',
-                    });
-                  }
-                }}
-                className="flex h-[25px] w-[25px] cursor-pointer items-center justify-center"
-              >
-                {reinviting ? (
-                  <Icon icon="spinner" className='h-4 w-4 fa-spin fa-1x' />
-                ) : (
-                  <Icon icon="rotate-right" className='h-4 w-4' />
-                )}
-              </Button>
-              <Tooltip
-                offset={8}
-                placement='left'
-                className="border select-none text-sm max-w-xs border-solid border-[--hl-sm] shadow-lg bg-[--color-bg] text-[--color-font] px-4 py-2 rounded-md overflow-y-auto max-h-[85vh] focus:outline-none"
-              >
-                Resend invitation
-              </Tooltip>
-            </TooltipTrigger>
-          )}
           <PromptButton
             confirmMessage='Confirm'
-            className="px-4 min-w-[12ch] py-1 font-semibold flex items-center justify-center gap-2 aria-pressed:bg-[--hl-sm] rounded-sm text-[--color-font] transition-all text-sm"
+            className="flex items-center gap-2 min-w-[75px] py-1 px-2 font-semibold aria-pressed:bg-[--hl-sm] text-[--color-font] transition-all text-sm"
             doneMessage={isAcceptedMember ? 'Removed' : 'Revoked'}
             disabled={
               (!permissionRef.current['delete:membership']
@@ -360,27 +348,23 @@ const MemberListItem: FC<{
                 || isCurrentUser) && isAcceptedMember
             }
             onClick={() => {
-              if (showDeleteConfirmation) {
-                if (isAcceptedMember) {
-                  deleteMember(organizationId, member.metadata.userId!).then(() => {
-                    onResetCurrentPage();
-                  });
-                }
+              if (isAcceptedMember) {
+                deleteMember(organizationId, member.metadata.userId!).then(() => {
+                  onResetCurrentPage();
+                });
+              }
 
-                if (isPendingMember && member.metadata.invitationId) {
-                  revokeOrganizationInvite(organizationId, member.metadata.invitationId).then(() => {
-                    onResetCurrentPage();
-                  });
-                }
+              if (isPendingMember && member.metadata.invitationId) {
+                revokeOrganizationInvite(organizationId, member.metadata.invitationId).then(() => {
+                  onResetCurrentPage();
+                });
+              }
 
-                if (isGroup) {
-                  console.log('unlinking team');
-                  unlinkTeam(organizationId, member.id).then(() => {
-                    onResetCurrentPage();
-                  });
-                }
-              } else {
-                setShowDeleteConfirmation(true);
+              if (isGroup) {
+                console.log('unlinking team');
+                unlinkTeam(organizationId, member.id).then(() => {
+                  onResetCurrentPage();
+                });
               }
             }}
           >
