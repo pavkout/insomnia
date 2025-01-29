@@ -156,6 +156,7 @@ export async function startInvite({ emails, teamIds, organizationId, roleId }: S
   let memberKeys: MemberProjectKey[] = [];
   const keyMap: Record<string, string> = {};
   const projectKeys = await decryptProjectKeys(await getPrivateKey(), myKeysInfo.projectKeys || []);
+
   if (myKeysInfo.members?.length) {
     projectKeys.reduce((keyMap: Record<string, string>, key: DecryptedProjectKey) => {
       keyMap[key.projectId] = key.symmetricKey;
@@ -170,13 +171,21 @@ export async function startInvite({ emails, teamIds, organizationId, roleId }: S
       .filter(Boolean) as MemberProjectKey[];
   }
 
-  // TODO: call the reconcile endpoint
-  console.log({ memberKeys });
+  if (memberKeys.length) {
+    await insomniaFetch({
+      method: 'POST',
+      path: `/v1/organizations/${organizationId}/reconcile-keys`,
+      sessionId: await getCurrentSessionId(),
+      data: { keys: memberKeys },
+      onlyResolveOnSuccess: true,
+    });
+  }
 
   const accountIds = Object.keys(instruction);
   // TODO: we should do this not in the renderer process but somewhere else, or do it in a worker instead at least
   // computation is going to be costly when there are lots of project keys.
   const keys: Record<string, Record<string, CollaboratorInviteKey>> = {};
+
   if (projectKeys.length) {
     for (const acctId in instruction) {
       if (!keys[acctId]) {
@@ -186,6 +195,7 @@ export async function startInvite({ emails, teamIds, organizationId, roleId }: S
       projectKeys.forEach(key => {
         const pubKey = instruction[acctId].publicKey;
         const newKey = buildMemberProjectKey(acctId, key.projectId, pubKey, key.symmetricKey);
+
         if (newKey) {
           keys[acctId][key.projectId] = {
             accountId: newKey.accountId,
@@ -197,7 +207,7 @@ export async function startInvite({ emails, teamIds, organizationId, roleId }: S
     }
   }
 
-  await insomniaFetch<void>({
+  await insomniaFetch({
     method: 'POST',
     path: `/v1/desktop/organizations/${organizationId}/collaborators/finish-adding`,
     data: { teamIds, keys, accountIds, roleId },
