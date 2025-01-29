@@ -326,7 +326,7 @@ const MemberListItem: FC<{
             <div className='min-w-[88px] flex justify-center items-center'>
               <Button
                 aria-label="Manage collaborators"
-                className="min-w-[68px] pressed:bg-opacity-40 flex gap-2 p-1 text-[--color-font-surprise] bg-opacity-100 bg-[rgba(var(--color-surprise-rgb),var(--tw-bg-opacity))] cursor-pointer items-center justify-center rounded-sm bg-clip-padding outline-none hover:bg-opacity-80 focus-visible:ring-2 focus-visible:ring-white/75 transition-all text-sm"
+                className="min-w-[70px] pressed:bg-opacity-40 flex gap-2 p-1 text-[--color-font-surprise] bg-opacity-100 bg-[rgba(var(--color-surprise-rgb),var(--tw-bg-opacity))] cursor-pointer items-center justify-center rounded-sm bg-clip-padding outline-none hover:bg-opacity-80 focus-visible:ring-2 focus-visible:ring-white/75 transition-all text-sm"
                 onPress={() => {
                   window.main.openInBrowser(
                     `${getAppWebsiteBaseURL()}/app/enterprise/team/${member.metadata.groupId}`,
@@ -343,7 +343,7 @@ const MemberListItem: FC<{
           <PromptButton
             confirmMessage='Confirm'
             className="flex items-center gap-2 min-w-[75px] py-1 px-2 font-semibold aria-pressed:bg-[--hl-sm] text-[--color-font] transition-all text-sm"
-            doneMessage={isAcceptedMember ? 'Removed' : 'Revoked'}
+            doneMessage={isAcceptedMember || isGroup ? 'Removed' : 'Revoked'}
             disabled={
               (!permissionRef.current['delete:membership']
                 || allRoles.find((r: Role) => r.id === member.metadata.roleId)?.name === 'owner'
@@ -371,7 +371,7 @@ const MemberListItem: FC<{
             }}
           >
             <Icon icon='trash' />
-            {isAcceptedMember ? 'Remove' : 'Revoke'}
+            {isAcceptedMember || isGroup ? 'Remove' : 'Revoke'}
           </PromptButton>
         </div>
       </ListBoxItem>
