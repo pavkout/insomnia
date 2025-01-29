@@ -235,6 +235,7 @@ const MemberListItem: FC<{
     const textValue = member.name ?? member.metadata.email;
     const isCurrentUser = isAcceptedMember && currentUserAccountId === member.metadata.userId;
     const isGroup = member.type === 'group';
+
   const isPendingInvitationExpired = isPendingMember && member.metadata.expiresAt && isAfter(new Date(), new Date(member.metadata.expiresAt));
 
     useEffect(() => {
