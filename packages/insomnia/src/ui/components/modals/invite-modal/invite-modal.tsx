@@ -323,20 +323,22 @@ const MemberListItem: FC<{
             />
           )}
           {member.type === 'group' && (
-            <Button
-              aria-label="Manage collaborators"
-              className="min-w-[88px] pressed:bg-opacity-40 flex gap-2 p-1 text-[--color-font-surprise] bg-opacity-100 bg-[rgba(var(--color-surprise-rgb),var(--tw-bg-opacity))] cursor-pointer items-center justify-center rounded-sm bg-clip-padding outline-none hover:bg-opacity-80 focus-visible:ring-2 focus-visible:ring-white/75 transition-all text-sm"
-              onPress={() => {
-                window.main.openInBrowser(
-                  `${getAppWebsiteBaseURL()}/app/enterprise/team/${member.metadata.groupId}`,
-                );
-              }}
-            >
-              <Icon icon="users" className="h-3 w-3" />
-              <p className="m-0 truncate text-sm font-normal">
-                Manage
-              </p>
-            </Button>
+            <div className='min-w-[88px] flex justify-center items-center'>
+              <Button
+                aria-label="Manage collaborators"
+                className="min-w-[68px] pressed:bg-opacity-40 flex gap-2 p-1 text-[--color-font-surprise] bg-opacity-100 bg-[rgba(var(--color-surprise-rgb),var(--tw-bg-opacity))] cursor-pointer items-center justify-center rounded-sm bg-clip-padding outline-none hover:bg-opacity-80 focus-visible:ring-2 focus-visible:ring-white/75 transition-all text-sm"
+                onPress={() => {
+                  window.main.openInBrowser(
+                    `${getAppWebsiteBaseURL()}/app/enterprise/team/${member.metadata.groupId}`,
+                  );
+                }}
+              >
+                <Icon icon="users" className="h-3 w-3" />
+                <p className="m-0 truncate text-sm font-normal">
+                  Manage
+                </p>
+              </Button>
+            </div>
           )}
           <PromptButton
             confirmMessage='Confirm'
