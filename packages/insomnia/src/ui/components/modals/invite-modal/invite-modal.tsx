@@ -12,6 +12,7 @@ import { insomniaFetch } from '../../../insomniaFetch';
 import type { Collaborator, CollaboratorsListLoaderResult } from '../../../routes/invite';
 import { PromptButton } from '../../base/prompt-button';
 import { Icon } from '../../icon';
+import { showAlert } from '..';
 import { InviteForm } from './invite-form';
 import { OrganizationMemberRolesSelector, type Role, SELECTOR_TYPE } from './organization-member-roles-selector';
 
@@ -58,6 +59,7 @@ const InviteModal: FC<{
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [queryInputString, setQueryInputString] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const collaboratorsListLoader = useFetcher<CollaboratorsListLoaderResult>();
 
@@ -174,6 +176,7 @@ const InviteModal: FC<{
                           permissionRef={permissionRef}
                           revalidateCurrentUserRoleAndPermissionsInOrg={revalidateCurrentUserRoleAndPermissionsInOrg}
                           onResetCurrentPage={resetCurrentPage}
+                          onError={setError}
                         />
                       }
                     </ListBox>
@@ -190,6 +193,9 @@ const InviteModal: FC<{
                         setSearchParams(getSearchParamsString(searchParams, { page: page + 1 }));
                       }}
                     />
+                    {error && <div className='flex justify-center mt-[16px]'>
+                      <p className="text-[12px] text-[--color-danger]">{error}</p>
+                    </div>}
                   </>)}
               </>)}
           </Dialog>
@@ -209,6 +215,7 @@ const MemberListItem: FC<{
   permissionRef: MutableRefObject<Record<Permission, boolean>>;
   revalidateCurrentUserRoleAndPermissionsInOrg: (organizationId: string) => Promise<[void, void]>;
   onResetCurrentPage: () => void;
+  onError: (error: string | null) => void;
 }> = ({
   organizationId,
   member,
@@ -220,6 +227,7 @@ const MemberListItem: FC<{
   permissionRef,
   revalidateCurrentUserRoleAndPermissionsInOrg,
   onResetCurrentPage,
+  onError,
 }) => {
     const reinviteCollaboratorFetcher = useFetcher();
     const reinviting = reinviteCollaboratorFetcher.state !== 'idle';
@@ -230,20 +238,26 @@ const MemberListItem: FC<{
     const updateMemberRoleFetcher = useFetcher();
     const memberRoleUpdating = updateMemberRoleFetcher.state !== 'idle';
 
+  const [isFailed, setIsFailed] = useState(false);
+
     const isAcceptedMember = member.type === 'member';
     const isPendingMember = member.type === 'invite';
+  const isGroup = member.type === 'group';
+
     const textValue = member.name ?? member.metadata.email;
-    const isCurrentUser = isAcceptedMember && currentUserAccountId === member.metadata.userId;
-    const isGroup = member.type === 'group';
+  const isCurrentUser = isAcceptedMember && currentUserAccountId === member.metadata.userId;
 
   const isPendingInvitationExpired = isPendingMember && member.metadata.expiresAt && isAfter(new Date(), new Date(member.metadata.expiresAt));
+  const memberRoleName = allRoles.find((r: Role) => r.id === member.metadata.roleId)?.name ?? 'member';
 
     useEffect(() => {
-      if (updateMemberRoleFetcher.data && !('error' in updateMemberRoleFetcher.data) && updateMemberRoleFetcher.state === 'idle') {
+      if (updateMemberRoleFetcher.data && 'error' in updateMemberRoleFetcher.data && updateMemberRoleFetcher.state === 'idle') {
+        onError(updateMemberRoleFetcher.data.error);
+      } else if (updateMemberRoleFetcher.data && updateMemberRoleFetcher.state === 'idle') {
         revalidateCurrentUserRoleAndPermissionsInOrg(organizationId);
         onResetCurrentPage();
       }
-    }, [onResetCurrentPage, organizationId, revalidateCurrentUserRoleAndPermissionsInOrg, updateMemberRoleFetcher.data, updateMemberRoleFetcher.state]);
+    }, [onError, onResetCurrentPage, organizationId, revalidateCurrentUserRoleAndPermissionsInOrg, updateMemberRoleFetcher.data, updateMemberRoleFetcher.state]);
 
     return (
       <ListBoxItem
@@ -274,6 +288,14 @@ const MemberListItem: FC<{
               aria-label="Delete member button"
               isDisabled={reinviting}
               onPress={async () => {
+                if (!permissionRef.current['update:membership']) {
+                  showAlert({
+                    title: 'Permission required',
+                    message: 'You don\'t have permission to make this action, please contact the organization owner.',
+                  });
+                  return;
+                }
+
                 if (member.metadata.invitationId) {
                   reinviteCollaboratorFetcher.submit({}, {
                     action: `/organization/${organizationId}/invites/${member.metadata.invitationId}/reinvite`,
@@ -297,9 +319,9 @@ const MemberListItem: FC<{
             <OrganizationMemberRolesSelector
               type={SELECTOR_TYPE.UPDATE}
               availableRoles={allRoles}
-              memberRoles={[allRoles.find((r: Role) => r.id === member.metadata.roleId)?.name ?? 'member']}
+              memberRoles={[memberRoleName]}
               userRole={currentUserRoleInOrg}
-              isDisabled={isAcceptedMember && allRoles.find((r: Role) => r.id === member.metadata.roleId)?.name === 'owner' || invitationRoleUpdating || memberRoleUpdating}
+              isDisabled={isAcceptedMember && memberRoleName === 'owner' || invitationRoleUpdating || memberRoleUpdating}
               isRBACEnabled={Boolean(orgFeatures?.features.orgBasicRbac?.enabled)}
               isUserOrganizationOwner={isCurrentUserOrganizationOwner}
               hasPermissionToChangeRoles={permissionRef.current['update:membership']}
@@ -343,30 +365,45 @@ const MemberListItem: FC<{
           )}
           <PromptButton
             confirmMessage='Confirm'
-            className="flex items-center gap-2 min-w-[75px] py-1 px-2 font-semibold aria-pressed:bg-[--hl-sm] text-[--color-font] transition-all text-sm"
-            doneMessage={isAcceptedMember || isGroup ? 'Removed' : 'Revoked'}
-            disabled={
-              (!permissionRef.current['delete:membership']
-                || allRoles.find((r: Role) => r.id === member.metadata.roleId)?.name === 'owner'
-                || isCurrentUser) && isAcceptedMember
-            }
+            className="flex items-center gap-2 min-w-[85px] py-1 px-2 font-semibold aria-pressed:bg-[--hl-sm] text-[--color-font] transition-all text-sm"
+            doneMessage={isFailed ? 'Failed' : isAcceptedMember || isGroup ? 'Removed' : 'Revoked'}
+            disabled={memberRoleName === 'owner' || (isCurrentUser && isAcceptedMember)}
             onClick={() => {
+              if (!permissionRef.current['delete:membership']) {
+                showAlert({
+                  title: 'Permission required',
+                  message: 'You don\'t have permission to make this action, please contact the organization owner.',
+                });
+                return;
+              }
+
+              onError(null);
+              setIsFailed(false);
+
               if (isAcceptedMember) {
                 deleteMember(organizationId, member.metadata.userId!).then(() => {
                   onResetCurrentPage();
+                }).catch(error => {
+                  onError(error.message);
+                  setIsFailed(true);
                 });
               }
 
               if (isPendingMember && member.metadata.invitationId) {
                 revokeOrganizationInvite(organizationId, member.metadata.invitationId).then(() => {
                   onResetCurrentPage();
+                }).catch(error => {
+                  onError(error.message);
+                  setIsFailed(true);
                 });
               }
 
               if (isGroup) {
-                console.log('unlinking team');
                 unlinkTeam(organizationId, member.id).then(() => {
                   onResetCurrentPage();
+                }).catch(error => {
+                  onError(error.message);
+                  setIsFailed(true);
                 });
               }
             }}
