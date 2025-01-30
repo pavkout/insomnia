@@ -260,7 +260,7 @@ export const InviteForm = ({
         </Button>
         <Popover
           placement="bottom start"
-          className="w-[--trigger-width] rounded-md bg-[--color-bg] text-[--color-font] border border-solid border-[--hl-sm] shadow-md"
+          className="w-[--trigger-width] min-w-[650px] rounded-md bg-[--color-bg] text-[--color-font] border border-solid border-[--hl-sm] shadow-md"
           ref={popoverRef}
           triggerRef={triggerRef}
           isOpen={showResults}
