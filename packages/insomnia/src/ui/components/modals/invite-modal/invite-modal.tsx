@@ -351,6 +351,14 @@ const MemberListItem: FC<{
                 aria-label="Manage collaborators"
                 className="min-w-[70px] pressed:bg-opacity-40 flex gap-2 p-1 text-[--color-font-surprise] bg-opacity-100 bg-[rgba(var(--color-surprise-rgb),var(--tw-bg-opacity))] cursor-pointer items-center justify-center rounded-sm bg-clip-padding outline-none hover:bg-opacity-80 focus-visible:ring-2 focus-visible:ring-white/75 transition-all text-sm"
                 onPress={() => {
+                  if (!permissionRef.current['own:organization']) {
+                    showAlert({
+                      title: 'Permission required',
+                      message: 'You don\'t have permission to make this action, please contact the organization owner.',
+                    });
+                    return;
+                  }
+
                   window.main.openInBrowser(
                     `${getAppWebsiteBaseURL()}/app/enterprise/team/${member.metadata.groupId}`,
                   );
