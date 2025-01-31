@@ -153,7 +153,7 @@ const InviteModal: FC<{
                   )}
                 </Group>
               </div>
-              {collaboratorsListLoader.data?.collaborators.length === 0 && page === 0 ? (
+              {collaboratorsListLoader.data?.collaborators?.length === 0 && page === 0 ? (
                 <div className='flex items-center justify-center h-[200px]'>
                   <p className="text-[14px] text-[--color-font]">{queryInputString ? `No member or team found for the search: "${queryInputString}"` : 'No members or teams'}</p>
                 </div>
