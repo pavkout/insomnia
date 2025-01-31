@@ -284,8 +284,6 @@ export const InviteForm = ({
               if (inputRef.current) {
                 inputRef.current.value = '';
               }
-
-              setShowResults(false);
             }}
           >
             {searchResult.map(item => (
@@ -313,7 +311,7 @@ const UserItem = (props: ListBoxItemProps & { children: React.ReactNode; isSelec
   return (
     <ListBoxItem
       {...props}
-      className="group flex cursor-default select-none items-center gap-2 rounded px-1 py-1 outline-none"
+      className="group flex select-none items-center gap-2 rounded px-1 py-1 outline-none cursor-pointer hover:bg-[--hl-xs] hover:text-[--color-font] focus:bg-[--hl-xs] focus:text-[--color-font]"
     >
       <span className="group-selected:font-medium flex flex-1 items-center gap-3 truncate font-normal">
         {props.children}
