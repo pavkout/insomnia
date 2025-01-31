@@ -66,8 +66,8 @@ export enum SELECTOR_TYPE {
   INVITE = 'invite',
 };
 
-interface PropsForUpdateRole {
-  type: SELECTOR_TYPE.UPDATE;
+interface Props {
+  type: SELECTOR_TYPE.UPDATE | SELECTOR_TYPE.INVITE;
   availableRoles: Role[];
   memberRoles: string[];
   userRole: Role;
@@ -79,16 +79,7 @@ interface PropsForUpdateRole {
   onRoleChange: (role: Role) => Promise<void>;
 }
 
-interface PropsForInvite {
-  type: SELECTOR_TYPE.INVITE;
-  availableRoles: Role[];
-  memberRoles: string[];
-  isDisabled?: boolean;
-  className?: string;
-  onRoleChange: (role: Role) => Promise<void>;
-}
-
-export const OrganizationMemberRolesSelector = (props: PropsForUpdateRole | PropsForInvite) => {
+export const OrganizationMemberRolesSelector = (props: Props) => {
   const {
     type,
     availableRoles,

@@ -375,7 +375,7 @@ const MemberListItem: FC<{
             confirmMessage='Confirm'
             className="flex items-center gap-2 min-w-[85px] py-1 px-2 font-semibold aria-pressed:bg-[--hl-sm] text-[--color-font] transition-all text-sm"
             doneMessage={isFailed ? 'Failed' : isAcceptedMember || isGroup ? 'Removed' : 'Revoked'}
-            disabled={memberRoleName === 'owner' || (isCurrentUser && isAcceptedMember)}
+            disabled={memberRoleName === 'owner' || isCurrentUser}
             onClick={() => {
               if (!permissionRef.current['delete:membership']) {
                 showAlert({
@@ -560,26 +560,6 @@ export const InviteModalContainer: FC<{
     }
   };
 };
-
-enum ITEM_TYPE {
-  MEMBER,
-  INVITE,
-  GROUP
-};
-
-export interface PendingMember {
-  id: string;
-  inviter: {
-    name: string;
-  };
-  invitee: {
-    email: string;
-  };
-  created_at: string;
-  expires_at: string;
-  roles: string[];
-  itemType: ITEM_TYPE.INVITE;
-}
 
 function checkPermissionRefType(permissionRef: MutableRefObject<Record<Permission, boolean> | undefined>): permissionRef is MutableRefObject<Record<Permission, boolean>> {
   return Boolean(permissionRef.current);
