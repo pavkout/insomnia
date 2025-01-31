@@ -17,12 +17,19 @@ interface AllowChangeRole {
   message: string;
 }
 
-const checkIfAllow = (
-  isUserOrganizationOwner: boolean,
-  role: Role,
-  isRBACEnabled: boolean,
-  hasPermissionToChangeRoles: boolean,
-): AllowChangeRole => {
+interface CheckIfAllowProps {
+  isUserOrganizationOwner?: boolean;
+  role?: Role;
+  isRBACEnabled?: boolean;
+  hasPermissionToChangeRoles?: boolean;
+}
+
+const checkIfAllow = ({
+  isUserOrganizationOwner = false,
+  role,
+  isRBACEnabled = false,
+  hasPermissionToChangeRoles = false,
+}: CheckIfAllowProps): AllowChangeRole => {
   const allow = { allow: true, title: '', message: '' };
 
   if (isUserOrganizationOwner) {
@@ -37,7 +44,7 @@ const checkIfAllow = (
     return allow;
   }
 
-  if (role.name === 'member') {
+  if (role?.name === 'member') {
     if (!isRBACEnabled) {
       return {
         allow: false,
@@ -70,10 +77,10 @@ interface Props {
   type: SELECTOR_TYPE.UPDATE | SELECTOR_TYPE.INVITE;
   availableRoles: Role[];
   memberRoles: string[];
-  userRole: Role;
-  hasPermissionToChangeRoles: boolean;
-  isUserOrganizationOwner: boolean;
-  isRBACEnabled: boolean;
+  userRole?: Role;
+  hasPermissionToChangeRoles?: boolean;
+  isUserOrganizationOwner?: boolean;
+  isRBACEnabled?: boolean;
   isDisabled?: boolean;
   className?: string;
   onRoleChange: (role: Role) => Promise<void>;
@@ -86,25 +93,22 @@ export const OrganizationMemberRolesSelector = (props: Props) => {
     memberRoles,
     isDisabled,
     className,
+    userRole,
+    hasPermissionToChangeRoles,
+    isUserOrganizationOwner,
+    isRBACEnabled,
     onRoleChange,
   } = props;
   const [selectedRoles, setSelectedRoles] = useState<string[]>(memberRoles);
 
   const handleRoleChange = (selectedRole: Role) => {
     if (type === SELECTOR_TYPE.UPDATE) {
-      const {
-        userRole,
-        hasPermissionToChangeRoles,
+      const { allow, title, message } = checkIfAllow({
         isUserOrganizationOwner,
-        isRBACEnabled,
-      } = props;
-
-      const { allow, title, message } = checkIfAllow(
-        isUserOrganizationOwner,
-        userRole,
+        role: userRole,
         isRBACEnabled,
         hasPermissionToChangeRoles,
-      );
+      });
 
       if (!allow) {
         showAlert({
