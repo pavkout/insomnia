@@ -1,5 +1,6 @@
 import { decryptRSAWithJWK, encryptRSAWithJWK } from '../../../../account/crypt';
 import { getCurrentSessionId, getPrivateKey } from '../../../../account/session';
+import { invariant } from '../../../../utils/invariant';
 import { insomniaFetch } from '../../../insomniaFetch';
 
 interface InviteInstruction {
@@ -136,20 +137,23 @@ interface CollaboratorInstructionItem {
 type CollaboratorInstruction = Record<string, CollaboratorInstructionItem>;
 
 export async function startInvite({ emails, teamIds, organizationId, roleId }: StartInviteParams) {
+  const sessionId = await getCurrentSessionId();
+  invariant(sessionId, 'Session ID is required');
+
   // we are merging these endpoints into one as it has grown onto several types over time.
   // this way, we can also offload the complex logic to the API
   const instruction = await insomniaFetch<CollaboratorInstruction>({
     method: 'POST',
     path: `/v1/desktop/organizations/${organizationId}/collaborators/start-adding`,
     data: { teamIds, emails },
-    sessionId: await getCurrentSessionId(),
+    sessionId,
     onlyResolveOnSuccess: true,
   });
 
   const myKeysInfo = await insomniaFetch<ResponseGetMyProjectKeys>({
     method: 'GET',
     path: `/v1/organizations/${organizationId}/my-project-keys`,
-    sessionId: await getCurrentSessionId(),
+    sessionId,
     onlyResolveOnSuccess: true,
   });
 
@@ -175,7 +179,7 @@ export async function startInvite({ emails, teamIds, organizationId, roleId }: S
     await insomniaFetch({
       method: 'POST',
       path: `/v1/organizations/${organizationId}/reconcile-keys`,
-      sessionId: await getCurrentSessionId(),
+      sessionId,
       data: { keys: memberKeys },
       onlyResolveOnSuccess: true,
     });
@@ -211,7 +215,7 @@ export async function startInvite({ emails, teamIds, organizationId, roleId }: S
     method: 'POST',
     path: `/v1/desktop/organizations/${organizationId}/collaborators/finish-adding`,
     data: { teamIds, keys, accountIds, roleId },
-    sessionId: await getCurrentSessionId(),
+    sessionId,
     onlyResolveOnSuccess: true,
   });
 }
