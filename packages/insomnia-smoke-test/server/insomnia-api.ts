@@ -2,6 +2,8 @@ import { randomUUID } from 'crypto';
 import type { Application } from 'express';
 import { json } from 'express';
 
+import { getRandomId, getTeamName, getUserEmail } from '../tests/smoke/test-utils';
+
 const currentPlan = {
   isActive: true,
   period: 'year',
@@ -231,6 +233,57 @@ const invites = {
   ],
 };
 
+type CollaboratorType = 'invite' | 'member' | 'group';
+interface CollaboratorSearchResultItem {
+  id: string;
+  picture: string;
+  type: CollaboratorType;
+  name: string;
+};
+
+interface EmailsList {
+  invitesCount: number;
+  membersCount: number;
+  groupsCount: number;
+};
+
+const getEmailsForInviteSerch = ({
+  invitesCount = 0,
+  membersCount = 0,
+  groupsCount = 0,
+}: EmailsList) => {
+  const emails: CollaboratorSearchResultItem[] = [];
+
+  for (let i = 0; i < groupsCount; i++) {
+    emails.push({
+      id: getRandomId(),
+      picture: 'https://static.insomnia.rest/insomnia-coffee.png',
+      type: 'group',
+      name: getTeamName(),
+    });
+  }
+
+  for (let i = 0; i < invitesCount; i++) {
+    emails.push({
+      id: getRandomId(),
+      picture: 'https://static.insomnia.rest/insomnia-gorilla.png',
+      type: 'invite',
+      name: getUserEmail(),
+    });
+  }
+
+  for (let i = 0; i < membersCount; i++) {
+    emails.push({
+      id: getRandomId(),
+      picture: 'https://static.insomnia.rest/insomnia-gorilla.png',
+      type: 'member',
+      name: getUserEmail(),
+    });
+  }
+
+  return emails;
+};
+
 export default (app: Application) => {
   // User
   app.get('/v1/user/profile', (_req, res) => {
@@ -367,5 +420,63 @@ export default (app: Application) => {
 
   app.get('/v1/organizations/:organizationId/invites', (_req, res) => {
     res.json(invites);
+  });
+
+  app.get('/v1/desktop/organizations/:organizationId/collaborators?per_page=15&page=0', (_req, res) => {
+    res.json(getEmailsForInviteSerch({
+      invitesCount: 8,
+      membersCount: 5,
+      groupsCount: 2,
+    }));
+  });
+
+  app.post('/v1/desktop/organizations/:organizationId/collaborators/start-adding', (_req, res) => {
+    res.json({
+      'acct_2346c8e88dae47e2a1a5cae04dc68ea3': {
+        'accountId': 'acct_2346c8e88dae47e2a1a5cae04dc68ea3',
+        'publicKey': '{"alg":"RSA-OAEP-256","e":"AQAB","ext":true,"key_ops":["encrypt"],"kty":"RSA","n":"o7QI0X9cue5ErinBTTz24YuTXGCbQQfhuqXKEq8xpBinqL8lW0CgTe3HqDDyGN6Ip3kE2wCCBLNTTheSS3FB0172VhsqE2mnlBsopfGWbNmFT-cT517464u9yrsFK2ywVDURDDjdh2BSl1T-3axy1P74BjvcOz7nzlAMNfT8Wp41Dwzb5o9-HPU_1nJQYzOb1zJlV1pwKzeufq81tNecT7td1QB3mnXhJAFFbRINiGu-uIaP7gl-J4ICOTh0Tjzzn7fKC-3EUbfLRvFUZBtRcZncWa5OjuGB5DhgHj8mcWvGyP_3gKzvOB2b4piE6N3NnbwO9-skIw5MdY-kQMvJLQ=="}',
+        'autoLinked': false,
+      },
+      'acct_2a1f5086018442b98fbb15120b75a27e': {
+        'accountId': 'acct_2a1f5086018442b98fbb15120b75a27e',
+        'publicKey': '{"alg":"RSA-OAEP-256","e":"AQAB","ext":true,"key_ops":["encrypt"],"kty":"RSA","n":"nvmA4jWOAUiopX7Ct9Z5mH6mmTB7I4SlSgDNCMtVxHKjEEegXuxTqkScklHnrZCT7ohmWY-6ouJW4ocjln3Falu8lxxB0V7YqBrxgf81lKlDIGr5f0VYp-R9JSBtR6btVj3xV-3I3APGH5lRBW0VGTdgrBaRAl7o9_4hy7xLSy_hqgqdH2-CS2gEZfRjN-1kjSI4nvqD1BSMfyWhu-pbhP6WdhmOa3JkWLPRtxQInv14Kp1-gWjsAfXYOEvldTH4DvCGYkvEBYvSr9FQ6NQKJFOHho4NAyXJhagvuqwc134XuwiFDgCmK0bh1jXR2fy-OR255S0NseArZPkY3l2Tjw=="}',
+        'autoLinked': false,
+      },
+      'acct_6694e55cce2c4dacb69c86844ba92d91': {
+        'accountId': 'acct_6694e55cce2c4dacb69c86844ba92d91',
+        'publicKey': '{"alg":"RSA-OAEP-256","e":"AQAB","ext":true,"key_ops":["encrypt"],"kty":"RSA","n":"wCd42bJqAZz5lRMk8MdMoF35ga9yhIjirMUhUXXKvA29LUYGsT6J_LxF6pXWV7CSZdxZPrf8Ur8L2AC7gz0ESHfV-uAVPBFnPrGBTiiHTBCDAtkt8tW3hqullJxfLS8PsGL6IYGYloq9gbKXiz-u37ba282vYQbbzkWO_382QJKS6eYAlE5JOpxmtNl7r5a3Okxz8JekBN5WhZrxEQzOv7ov7zmmRZPBgCm3Xo7RzAuUpBam1EkO5UvGL3DEjnc_Kx7R9jVbmLgDcryJDooKiCVLWv-tyg9H5QYMVd76uxAcQE9fJNoxSX-UU-Tu78-6CHk68IyTa2Rf4BwvSZJw-Q=="}',
+        'autoLinked': false,
+      },
+      'acct_72196d3295b243b48ea4de15391873b7': {
+        'accountId': 'acct_72196d3295b243b48ea4de15391873b7',
+        'publicKey': '{"alg":"RSA-OAEP-256","e":"AQAB","ext":true,"key_ops":["encrypt"],"kty":"RSA","n":"94S0IWkw5RgnhJy1Dspynt1gsRnOrG_A5UqI2sbp8fNCdlU9Z0M-r9O-ern0Wgupxxqt8s3xpQzaRYSPcCOK4z9F-w2MT6wIKn7EKKWCpXa94pra4J5abVukwtbPILIi9-uKu8RisnaeYT82OfZKAaQi-J24yzRI7qYLyS0GCrSxWgr1-wVzeRrE8gnwQU677TVAyGDTioz3EQ2-pB4fTkXdrBlVZ8qQkruwcTJ--rr550MD1cRK95J0jT1qGn8e0bTMW5lHP3dZH7vveFj1RP3cD7jnO6b3pD7jhDaMLJqXw0Nvxru__lToP-_r054Ea8ffEWVjygtqvplxq4R3Cw=="}',
+        'autoLinked': false,
+      },
+      'acct_fe023b1398ab48fd8f9d3dfb622f5bf6': {
+        'accountId': 'acct_fe023b1398ab48fd8f9d3dfb622f5bf6',
+        'publicKey': '{"alg":"RSA-OAEP-256","e":"AQAB","ext":true,"key_ops":["encrypt"],"kty":"RSA","n":"s0W6IbaPmPaMgzf2-rGOffm4tNg8_ZykiX2C6ZgFdC-GsMGiF08pSjD7UfGTPSTIWFv4Ncz6D0J8wbFBa87IYTuIZhewbNAqRcX1eu_g0-4dNIw9KqhvIoy_O-r-MT1T11TuU5gWWyHw8mY2Aax9Z_JDdDMQc-dP_FqxGCTIHfe52xQNaCL3AgMp0nU5sDUp_vo3YXSWk0yuERqQ9TMcB9l27hQhbHZHDfsdHTodXutbBG5MwpcDBppriBVlMVjY8M7QHt61C7KF5mhgniEd2msF0bAZZaVz1ibZ9QNdFHHPrdfLLQvPyZFD4m8a7Wt0Qcq9FfrFubWv1208Ocet3Q=="}',
+        'autoLinked': false,
+      },
+    });
+  });
+
+  app.get('/v1/organizations/:organizationId/my-project-keys', (_req, res) => {
+    res.json({ 'projectKeys': [], 'members': [] });
+  });
+
+  app.post('/v1/organizations/:organizationId/reconcile-keys', (_req, res) => {
+    res.json(null);
+  });
+
+  app.post('/v1/desktop/organizations/:organizationId/collaborators/finish-adding', (_req, res) => {
+    res.json(null);
+  });
+
+  app.get('/v1/desktop/organizations/:organizationId/collaborators/search/*', (_req, res) => {
+    res.json(getEmailsForInviteSerch({
+      invitesCount: 8,
+      membersCount: 5,
+      groupsCount: 2,
+    }));
   });
 };
