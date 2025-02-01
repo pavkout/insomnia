@@ -106,7 +106,7 @@ export const InviteForm = ({
   };
 
   const handleInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.code === 'Enter' || e.code === 'NumpadEnter' || e.key === ',') {
+    if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
 
       if (inputRef.current) {
@@ -229,20 +229,20 @@ export const InviteForm = ({
             const emailsToInvite = emails.filter(({ teamId }) => !teamId).map(({ email }) => email);
             const groupsToInvite = emails.filter(({ teamId }) => teamId).map(({ teamId }) => teamId as string);
 
-            handleInvite({
+            startInvite({
               emails: emailsToInvite,
-              groupIds: groupsToInvite,
+              teamIds: groupsToInvite,
               organizationId,
-              role: selectedRoleRef.current,
+              roleId: selectedRoleRef.current.id,
             }).then(
               () => {
                 window.main.trackSegmentEvent({
                   event: SegmentEvent.inviteMember,
                   properties: {
-                  numberOfInvites: emailsToInvite.length,
-                  numberOfTeams: groupsToInvite.length,
-                },
-              });
+                    numberOfInvites: emailsToInvite.length,
+                    numberOfTeams: groupsToInvite.length,
+                  },
+                });
 
                 setEmails([]);
                 onInviteCompleted?.();
@@ -286,7 +286,7 @@ export const InviteForm = ({
               }
             }}
           >
-            {searchResult.map(item => (
+            {searchResult.map((item, index) => (
               <UserItem
                 id={item.name}
                 key={item.name}
@@ -294,7 +294,7 @@ export const InviteForm = ({
                 isSelected={emails.findIndex(({ email: e }) => e === item.name) !== -1}
               >
                 <img alt="" src={item.picture} className="h-6 w-6 rounded-full" />
-                <span className="truncate">{item.name}</span>
+                <span className="truncate" data-testid={`search-test-result-iteration-${index}`}>{item.name}</span>
               </UserItem>
             ))}
           </ListBox>
@@ -320,26 +320,6 @@ const UserItem = (props: ListBoxItemProps & { children: React.ReactNode; isSelec
     </ListBoxItem>
   );
 };
-
-async function handleInvite({
-  emails,
-  groupIds,
-  organizationId,
-  role,
-}: {
-  emails: string[];
-  groupIds?: string[];
-  organizationId: string;
-  role: Role;
-  enterpriseId?: string;
-  }) {
-  await startInvite({
-    emails,
-    teamIds: groupIds ?? [],
-    organizationId,
-    roleId: role.id,
-  });
-}
 export interface GroupMemberKey {
   accountId: string;
   organizationId: string;
