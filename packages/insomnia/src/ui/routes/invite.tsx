@@ -67,7 +67,7 @@ export const collaboratorsListLoader: LoaderFunction = async ({ params, request 
   } catch (err) {
     return {
       start: 0,
-      limit: 25,
+      limit: 15,
       length: 0,
       total: 0,
       next: '',
