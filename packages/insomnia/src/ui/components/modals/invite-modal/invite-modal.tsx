@@ -161,11 +161,12 @@ const InviteModal: FC<{
                   <>
                     <ListBox
                       aria-label="Invitation list"
-                      items={collaboratorsListLoader.data?.collaborators || []}
                       className="flex flex-col gap-1"
                     >
-                      {member =>
+                      {collaboratorsListLoader.data?.collaborators.map((member: Collaborator, idx: number) => (
                         <MemberListItem
+                          key={member.id}
+                          index={idx}
                           organizationId={organizationId}
                           member={member}
                           currentUserAccountId={currentUserAccountId}
@@ -178,7 +179,7 @@ const InviteModal: FC<{
                           onResetCurrentPage={resetCurrentPage}
                           onError={setError}
                         />
-                      }
+                      ))}
                     </ListBox>
                     <PaginationBar
                       isPrevDisabled={page === 0}
@@ -205,6 +206,7 @@ const InviteModal: FC<{
   };
 
 const MemberListItem: FC<{
+  index: number;
   organizationId: string;
   member: Collaborator;
   currentUserAccountId: string;
@@ -217,6 +219,7 @@ const MemberListItem: FC<{
   onResetCurrentPage: () => void;
   onError: (error: string | null) => void;
 }> = ({
+  index,
   organizationId,
   member,
   currentUserAccountId,
@@ -262,6 +265,7 @@ const MemberListItem: FC<{
     return (
       <ListBoxItem
         id={isAcceptedMember ? member.metadata.userId : member.id}
+        data-testid={`collaborator-test-iteration-${index}`}
         textValue={textValue}
         className='flex justify-between outline-none gap-[16px] leading-[36px] odd:bg-[--hl-xs] px-2 rounded-sm'
       >
@@ -681,7 +685,7 @@ async function getOrganization(
 }
 
 async function deleteMember(organizationId: string, userId: string) {
-  return insomniaFetch<OrganizationAuth0>({
+  return insomniaFetch<void>({
     method: 'DELETE',
     path: `/v1/organizations/${organizationId}/members/${userId}`,
     sessionId: await getCurrentSessionId(),
@@ -692,7 +696,7 @@ async function deleteMember(organizationId: string, userId: string) {
 }
 
 async function unlinkTeam(organizationId: string, collaboratorId: string) {
-  return insomniaFetch<OrganizationAuth0>({
+  return insomniaFetch<void>({
     method: 'DELETE',
     path: `/v1/desktop/organizations/${organizationId}/collaborators/${collaboratorId}/unlink`,
     sessionId: await getCurrentSessionId(),
@@ -703,7 +707,7 @@ async function unlinkTeam(organizationId: string, collaboratorId: string) {
 }
 
 async function revokeOrganizationInvite(organizationId: string, invitationId: string) {
-  return insomniaFetch<OrganizationAuth0>({
+  return insomniaFetch<void>({
     method: 'DELETE',
     path: `/v1/organizations/${organizationId}/invites/${invitationId}`,
     sessionId: await getCurrentSessionId(),
