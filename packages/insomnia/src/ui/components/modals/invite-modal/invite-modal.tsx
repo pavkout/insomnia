@@ -163,7 +163,7 @@ const InviteModal: FC<{
                       aria-label="Invitation list"
                       className="flex flex-col gap-1"
                     >
-                      {collaboratorsListLoader.data?.collaborators.map((member: Collaborator, idx: number) => (
+                      {collaboratorsListLoader.data?.collaborators?.map((member: Collaborator, idx: number) => (
                         <MemberListItem
                           key={member.id}
                           index={idx}
