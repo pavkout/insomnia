@@ -34,7 +34,7 @@ export interface Collaborator {
   metadata: CollaboratorMetadata;
 };
 
-export interface CollaboratorsListLoaderResult extends PaginatedList<{ collaborators: Collaborator[] }> { };
+export type CollaboratorsListLoaderResult = PaginatedList<{ collaborators: Collaborator[] }> | Error;
 
 export const collaboratorsListLoader: LoaderFunction = async ({ params, request }): Promise<CollaboratorsListLoaderResult> => {
   const { id: sessionId } = await userSession.get();
@@ -65,14 +65,7 @@ export const collaboratorsListLoader: LoaderFunction = async ({ params, request 
 
     return collaboratorsList;
   } catch (err) {
-    return {
-      start: 0,
-      limit: 15,
-      length: 0,
-      total: 0,
-      next: '',
-      collaborators: [],
-    };
+    return new Error(err.message);
   }
 };
 
