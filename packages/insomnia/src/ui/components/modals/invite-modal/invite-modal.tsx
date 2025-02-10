@@ -65,7 +65,9 @@ const InviteModal: FC<{
 
   const page = searchParams.get('page') ? Number(searchParams.get('page')) : 0;
 
-  const total = collaboratorsListLoader.data?.total ?? 0;
+  const total = collaboratorsListLoader.data && 'total' in collaboratorsListLoader?.data && collaboratorsListLoader.data.total || 0;
+  const collaboratorListError = collaboratorsListLoader.data && 'error' in collaboratorsListLoader?.data && 'message' in collaboratorsListLoader?.data && collaboratorsListLoader.data?.message as string || null;
+  const collaborators = collaboratorsListLoader.data && 'collaborators' in collaboratorsListLoader?.data && collaboratorsListLoader.data?.collaborators || [];
 
   useEffect(() => {
     if (!collaboratorsListLoader.data && collaboratorsListLoader.state === 'idle') {
@@ -153,7 +155,10 @@ const InviteModal: FC<{
                   )}
                 </Group>
               </div>
-              {collaboratorsListLoader.data?.collaborators?.length === 0 && page === 0 ? (
+              {collaboratorListError && <div className='flex items-center justify-center h-[200px]'>
+                <p className="text-[12px] text-[--color-danger] first-letter:capitalize">{collaboratorListError}</p>
+              </div>}
+              {collaborators?.length === 0 && page === 0 ? !collaboratorListError && (
                 <div className='flex items-center justify-center h-[200px]'>
                   <p className="text-[14px] text-[--color-font]">{queryInputString ? `No member or team found for the search: "${queryInputString}"` : 'No members or teams'}</p>
                 </div>
@@ -163,7 +168,7 @@ const InviteModal: FC<{
                       aria-label="Invitation list"
                       className="flex flex-col gap-1"
                     >
-                      {collaboratorsListLoader.data?.collaborators?.map((member: Collaborator, idx: number) => (
+                      {collaborators?.map((member: Collaborator, idx: number) => (
                         <MemberListItem
                           key={member.id}
                           index={idx}
@@ -690,8 +695,8 @@ async function deleteMember(organizationId: string, userId: string) {
     path: `/v1/organizations/${organizationId}/members/${userId}`,
     sessionId: await getCurrentSessionId(),
     onlyResolveOnSuccess: true,
-  }).catch(() => {
-    throw new Error('Failed to remove member from organization');
+  }).catch(error => {
+    throw new Error(error ?? 'Failed to remove member from organization');
   });
 }
 
@@ -701,8 +706,8 @@ async function unlinkTeam(organizationId: string, collaboratorId: string) {
     path: `/v1/desktop/organizations/${organizationId}/collaborators/${collaboratorId}/unlink`,
     sessionId: await getCurrentSessionId(),
     onlyResolveOnSuccess: true,
-  }).catch(() => {
-    throw new Error('Failed to unlink team from organization');
+  }).catch(error => {
+    throw new Error(error ?? 'Failed to unlink team from organization');
   });
 }
 
@@ -712,7 +717,7 @@ async function revokeOrganizationInvite(organizationId: string, invitationId: st
     path: `/v1/organizations/${organizationId}/invites/${invitationId}`,
     sessionId: await getCurrentSessionId(),
     onlyResolveOnSuccess: true,
-  }).catch(() => {
-    throw new Error('Failed to revoke invitation from organization');
+  }).catch(error => {
+    throw new Error(error ?? 'Failed to revoke invitation from organization');
   });
 }
