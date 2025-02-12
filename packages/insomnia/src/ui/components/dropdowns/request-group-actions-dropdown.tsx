@@ -301,7 +301,7 @@ export const RequestGroupActionsDropdown = ({
         <Button
           data-testid={`Dropdown-${toKebabCase(requestGroup.name)}`}
           aria-label="Request Group Actions"
-          className="opacity-0 items-center hover:opacity-100 focus:opacity-100 data-[pressed]:opacity-100 flex group-focus:opacity-100 group-hover:opacity-100 justify-center h-6 aspect-square aria-pressed:bg-[--hl-sm] rounded-sm text-[--color-font] hover:bg-[--hl-xs] focus:ring-inset ring-1 ring-transparent focus:ring-[--hl-md] transition-all text-sm"
+          className="hidden items-center group-focus:flex group-hover:flex justify-center h-6 aspect-square aria-pressed:bg-[--hl-sm] rounded-sm text-[--color-font] hover:bg-[--hl-xs] focus:ring-inset ring-1 ring-transparent focus:ring-[--hl-md] transition-all text-sm"
         >
           <Icon icon="caret-down" />
         </Button>
