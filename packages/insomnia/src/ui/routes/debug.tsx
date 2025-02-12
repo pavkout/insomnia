@@ -1343,7 +1343,7 @@ const CollectionGridListItem = ({
             isPinned={item.pinned}
             isOpen={isContextMenuOpen}
             onOpenChange={setIsContextMenuOpen}
-              triggerRef={triggerRef}
+            triggerRef={triggerRef}
           />
         )}
       </div>
