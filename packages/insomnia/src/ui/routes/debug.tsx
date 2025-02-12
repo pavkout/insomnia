@@ -1233,6 +1233,7 @@ const CollectionGridListItem = ({
 }): React.ReactNode => {
   const [isEditable, setIsEditable] = useState(false);
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
 
   const action = isRequestGroup(item.doc) ? `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request-group/${item.doc._id}/update` : `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request/${item.doc._id}/update`;
 
@@ -1251,6 +1252,7 @@ const CollectionGridListItem = ({
       textValue={label}
       data-testid={item.doc.name}
       style={style}
+      ref={triggerRef}
     >
       <div
         onContextMenu={e => {
@@ -1330,6 +1332,7 @@ const CollectionGridListItem = ({
             onRename={() => setIsEditable(true)}
             isOpen={isContextMenuOpen}
             onOpenChange={setIsContextMenuOpen}
+            triggerRef={triggerRef}
           />
         ) : (
           <RequestActionsDropdown
@@ -1340,6 +1343,7 @@ const CollectionGridListItem = ({
             isPinned={item.pinned}
             isOpen={isContextMenuOpen}
             onOpenChange={setIsContextMenuOpen}
+              triggerRef={triggerRef}
           />
         )}
       </div>

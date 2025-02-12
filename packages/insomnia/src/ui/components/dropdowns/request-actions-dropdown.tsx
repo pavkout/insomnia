@@ -36,6 +36,7 @@ interface Props {
   request: Request | GrpcRequest | WebSocketRequest;
   requestGroup?: RequestGroup;
   isOpen: boolean;
+  triggerRef: React.RefObject<HTMLDivElement>;
   onOpenChange: (isOpen: boolean) => void;
   onRename: () => void;
 }
@@ -46,6 +47,7 @@ export const RequestActionsDropdown = ({
   isPinned,
   request,
   isOpen,
+  triggerRef,
   onOpenChange,
   onRename,
 }: Props) => {
@@ -276,7 +278,7 @@ export const RequestActionsDropdown = ({
         >
           <Icon icon="caret-down" />
         </Button>
-        <Popover className="min-w-max overflow-y-hidden flex flex-col">
+        <Popover className="min-w-max overflow-y-hidden flex flex-col" triggerRef={triggerRef} placement="bottom end" offset={5}>
           <Menu
             aria-label="Request Actions Menu"
             selectionMode="single"
