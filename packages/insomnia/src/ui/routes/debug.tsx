@@ -1259,7 +1259,7 @@ const CollectionGridListItem = ({
         }}
         onDoubleClick={() => setIsEditable(true)}
         data-selected={isSelected}
-        className="flex select-none outline-none data-[selected=true]:text-[--color-font] relative group-hover:bg-[--hl-xs] group-focus:bg-[--hl-sm] transition-colors gap-2 px-4 items-center h-[--line-height-xs] w-full overflow-hidden text-[--hl]"
+        className="flex select-none outline-none data-[selected=true]:text-[--color-font] relative group-hover:bg-[--hl-xs] group-focus:bg-[--hl-sm] transition-colors gap-2 pl-4 pr-2 items-center h-[--line-height-xs] w-full overflow-hidden text-[--hl]"
         style={{
           paddingLeft: `${item.level + 1}rem`,
         }}
@@ -1308,7 +1308,7 @@ const CollectionGridListItem = ({
           value={getRequestNameOrFallback({ ...item.doc, name })}
           name="request name"
           ariaLabel={label}
-          className="px-1 flex-1 hover:!bg-transparent"
+          className="flex-1 hover:!bg-transparent"
           onSubmit={name => {
             if (isRequestGroup(item.doc)) {
               patchGroup(item.doc._id, { name });
