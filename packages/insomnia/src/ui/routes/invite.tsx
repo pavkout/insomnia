@@ -5,7 +5,7 @@ import * as models from '../../models';
 import { invariant } from '../../utils/invariant';
 import { insomniaFetch } from '../insomniaFetch';
 
-export interface PaginatedList {
+interface PaginatedList {
   start: number;
   limit: number;
   length: number;
@@ -15,7 +15,7 @@ export interface PaginatedList {
 
 export type CollaboratorType = 'invite' | 'member' | 'group';
 
-export interface CollaboratorMetadata {
+interface CollaboratorMetadata {
   groupId?: string;
   invitationId?: string;
   roleId?: string;

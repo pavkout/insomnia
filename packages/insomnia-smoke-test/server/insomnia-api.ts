@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import type { Application } from 'express';
 import { json } from 'express';
 
+import { Collaborator, CollaboratorType } from '../../insomnia/src/ui/routes/invite';
 import { getRandomId, getTeamName, getUserEmail } from '../tests/smoke/test-utils';
 
 const currentPlan = {
@@ -251,7 +252,6 @@ const invites = {
   ],
 };
 
-type CollaboratorType = 'invite' | 'member' | 'group';
 interface CollaboratorSearchResultItem {
   id: string;
   picture: string;
@@ -313,33 +313,6 @@ const emailsAndGroupsToSearch = getEmailsForInviteSearch({
   membersCount: 4,
   groupsCount: 1,
 }).concat(emailsAndGroupsToInvite);
-
-export type PaginatedList<T extends Record<string, unknown>> = {
-  start: number;
-  limit: number;
-  length: number;
-  total: number;
-  next: string;
-} & T;
-
-export interface CollaboratorMetadata {
-  groupId?: string;
-  invitationId?: string;
-  roleId?: string;
-  email?: string;
-  userId?: string;
-  expiresAt?: string;
-  groupTotal?: number;
-};
-
-export interface Collaborator {
-  id: string;
-  picture: string;
-  type: CollaboratorType;
-  name: string;
-  createdAt?: string;
-  metadata: CollaboratorMetadata;
-};
 
 const OWNER_ROLE_ID = 'role_b3cf4fed-9208-497a-93c6-ae1a82b7b889';
 const ADMIN_ROLE_ID = 'role_1c7938bc-c53b-49a1-819e-72f0c3a5baa6';
