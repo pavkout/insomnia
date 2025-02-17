@@ -13,7 +13,6 @@ interface FetchConfig {
   headers?: Record<string, string>;
   onlyResolveOnSuccess?: boolean;
   timeout?: number;
-  rateLimitKey?: string;
 }
 
 export class ResponseFailError extends Error {
@@ -36,9 +35,7 @@ export async function insomniaFetch<T = void>({
   headers,
   onlyResolveOnSuccess = false,
   timeout = INSOMNIA_FETCH_TIME_OUT,
-  rateLimitKey,
 }: FetchConfig): Promise<T> {
-  const rateLimitToken = sessionStorage.getItem(rateLimitKey ?? '');
 
   const config: RequestInit = {
     method,
@@ -51,7 +48,6 @@ export async function insomniaFetch<T = void>({
       ...(data ? { 'Content-Type': 'application/json' } : {}),
       ...(organizationId ? { 'X-Insomnia-Org-Id': organizationId } : {}),
       ...(PLAYWRIGHT ? { 'X-Mockbin-Test': 'true' } : {}),
-      ...(rateLimitKey && rateLimitToken ? { 'x-insomnia-ratelimiter': rateLimitToken } : {}),
     },
     ...(data ? { body: JSON.stringify(data) } : {}),
     signal: AbortSignal.timeout(timeout),
@@ -63,15 +59,6 @@ export async function insomniaFetch<T = void>({
 
   try {
     const response = await fetch((origin || getApiBaseURL()) + path, config);
-
-    if (rateLimitKey) {
-      const rateLimitToken = response.headers.get('x-insomnia-ratelimiter');
-      if (rateLimitToken) {
-        sessionStorage.setItem(rateLimitKey, rateLimitToken);
-      } else {
-        sessionStorage.removeItem(rateLimitKey);
-      }
-    }
 
     const uri = response.headers.get('x-insomnia-command');
     if (uri) {
