@@ -36,7 +36,6 @@ export async function insomniaFetch<T = void>({
   onlyResolveOnSuccess = false,
   timeout = INSOMNIA_FETCH_TIME_OUT,
 }: FetchConfig): Promise<T> {
-
   const config: RequestInit = {
     method,
     headers: {
@@ -52,14 +51,12 @@ export async function insomniaFetch<T = void>({
     ...(data ? { body: JSON.stringify(data) } : {}),
     signal: AbortSignal.timeout(timeout),
   };
-
   if (sessionId === undefined) {
     throw new Error(`No session ID provided to ${method}:${path}`);
   }
 
   try {
     const response = await fetch((origin || getApiBaseURL()) + path, config);
-
     const uri = response.headers.get('x-insomnia-command');
     if (uri) {
       window.main.openDeepLink(uri);
