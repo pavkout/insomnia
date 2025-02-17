@@ -17,11 +17,14 @@ import { handleToggleEnvironmentType } from '../components/editors/environment-u
 import { Icon } from '../components/icon';
 import { useDocBodyKeyboardShortcuts } from '../components/keydown-binder';
 import { showAlert } from '../components/modals';
+import { OrganizationTabList } from '../components/tabs/tab-list';
+import { INSOMNIA_TAB_HEIGHT } from '../constant';
+import { useInsomniaTab } from '../hooks/use-insomnia-tab';
 import { useOrganizationPermissions } from '../hooks/use-organization-features';
 import type { WorkspaceLoaderData } from './workspace';
 
 const Environments = () => {
-  const { organizationId, projectId, workspaceId } = useParams<{ organizationId: string; projectId: string; workspaceId: string }>();
+  const { organizationId = '', projectId = '', workspaceId = '' } = useParams<{ organizationId: string; projectId: string; workspaceId: string }>();
   const routeData = useRouteLoaderData(
     ':workspaceId'
   ) as WorkspaceLoaderData;
@@ -40,6 +43,7 @@ const Environments = () => {
     activeEnvironment,
     subEnvironments,
     activeWorkspaceMeta,
+    activeWorkspace,
   } = routeData;
   const [selectedEnvironmentId, setSelectedEnvironmentId] = useState<string>(activeEnvironment._id);
   const isUsingInsomniaCloudSync = Boolean(isRemoteProject(activeProject) && !activeWorkspaceMeta?.gitRepositoryId);
@@ -256,10 +260,18 @@ const Environments = () => {
     sidebar_toggle: toggleSidebar,
   });
 
+  useInsomniaTab({
+    organizationId,
+    projectId,
+    workspaceId,
+    activeWorkspace,
+    activeProject,
+  });
+
   return (
     <PanelGroup ref={sidebarPanelRef} autoSaveId="insomnia-sidebar" id="wrapper" className='new-sidebar w-full h-full text-[--color-font]' direction='horizontal'>
       <Panel id="sidebar" className='sidebar theme--sidebar flex flex-col justify-between overflow-hidden divide-solid divide-y divide-[--hl-md]' maxSize={40} minSize={10} collapsible>
-        <Breadcrumbs className='flex h-[--line-height-sm] list-none items-center m-0 gap-2 p-[--padding-sm] font-bold w-full'>
+        <Breadcrumbs className={`flex h-[${INSOMNIA_TAB_HEIGHT}px] px-[--padding-sm] list-none items-center m-0 gap-2 font-bold w-full`}>
           <Breadcrumb className="flex select-none items-center gap-2 text-[--color-font] h-full outline-none data-[focused]:outline-none">
             <NavLink
               data-testid="project"
@@ -409,8 +421,9 @@ const Environments = () => {
         <WorkspaceSyncDropdown />
       </Panel>
       <PanelResizeHandle className='h-full w-[1px] bg-[--hl-md]' />
-      <Panel id="pane-one" className='pane-one theme--pane'>
-        <div className='flex-1 flex flex-col h-full divide-solid divide-y divide-[--hl-md] overflow-hidden'>
+      <Panel id="pane-one" className='pane-one theme--pane flex flex-col'>
+        <OrganizationTabList />
+        <div className='flex-1 flex flex-col divide-solid divide-y divide-[--hl-md] overflow-hidden'>
           <div className='flex flex-shrink-0 basis-[--line-height-sm] items-center p-[--padding-sm] justify-between gap-2 w-full overflow-hidden'>
             <Heading className='flex flex-grow items-center gap-2 text-lg py-2 px-4 overflow-hidden'>
               <Icon className='w-4' icon={selectedEnvironment?.isPrivate ? 'lock' : isUsingGitSync ? ['fab', 'git-alt'] : isUsingInsomniaCloudSync ? 'globe-americas' : 'file-arrow-down'} />
