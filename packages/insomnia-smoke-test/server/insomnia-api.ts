@@ -341,11 +341,9 @@ export interface Collaborator {
   metadata: CollaboratorMetadata;
 };
 
-export interface CollaboratorsListLoaderResult extends PaginatedList<{ collaborators: Collaborator[] }> { };
-
-const OWNER_ROLE_ID = "role_b3cf4fed-9208-497a-93c6-ae1a82b7b889";
-const ADMIN_ROLE_ID = "role_1c7938bc-c53b-49a1-819e-72f0c3a5baa6";
-const MEMBER_ROLE_ID = "role_4c924f55-7706-4de8-94ab-0a2085890641";
+const OWNER_ROLE_ID = 'role_b3cf4fed-9208-497a-93c6-ae1a82b7b889';
+const ADMIN_ROLE_ID = 'role_1c7938bc-c53b-49a1-819e-72f0c3a5baa6';
+const MEMBER_ROLE_ID = 'role_4c924f55-7706-4de8-94ab-0a2085890641';
 
 const getCollaborators = ({
   invitesCount = 0,
@@ -569,9 +567,6 @@ export default (app: Application) => {
   });
 
   app.get('/v1/desktop/organizations/:organizationId/collaborators', (_req, res) => {
-    const { page, per_page, filter } = _req.query;
-    console.log(_req)
-    console.log({ page, per_page, filter });
     res.json(collaboratorsList);
   });
 

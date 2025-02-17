@@ -5,13 +5,13 @@ import * as models from '../../models';
 import { invariant } from '../../utils/invariant';
 import { insomniaFetch } from '../insomniaFetch';
 
-export type PaginatedList<T extends Record<string, unknown>> = {
+export interface PaginatedList {
   start: number;
   limit: number;
   length: number;
   total: number;
   next: string;
-} & T;
+};
 
 export type CollaboratorType = 'invite' | 'member' | 'group';
 
@@ -34,7 +34,9 @@ export interface Collaborator {
   metadata: CollaboratorMetadata;
 };
 
-export type CollaboratorsListLoaderResult = PaginatedList<{ collaborators: Collaborator[] }> | Error;
+export type CollaboratorsListLoaderResult = PaginatedList & {
+  collaborators: Collaborator[];
+} | Error;
 
 export const collaboratorsListLoader: LoaderFunction = async ({ params, request }): Promise<CollaboratorsListLoaderResult> => {
   const { id: sessionId } = await userSession.get();
