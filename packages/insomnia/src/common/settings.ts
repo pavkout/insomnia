@@ -106,6 +106,8 @@ export interface Settings {
 
   /** If true, Insomnia won’t show a notification when new updates are available. Users can still check for updates in Preferences. */
   disableUpdateNotification: boolean;
+
+  enableKeyMapForInlineTextEditors: boolean;
   editorFontSize: number;
   editorIndentSize: number;
   editorIndentWithTabs: boolean;
