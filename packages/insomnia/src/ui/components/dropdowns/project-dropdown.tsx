@@ -21,6 +21,7 @@ import {
 import { useFetcher } from 'react-router-dom';
 
 import {
+  getDefaultProjectType,
   isRemoteProject,
   type Project,
 } from '../../../models/project';
@@ -33,6 +34,7 @@ interface Props {
   project: Project & { hasUncommittedOrUnpushedChanges?: boolean };
   organizationId: string;
   storage: ORG_STORAGE_RULE;
+  isGitSyncEnabled: boolean;
 }
 
 interface ProjectActionItem {
@@ -42,7 +44,7 @@ interface ProjectActionItem {
   action: (projectId: string, projectName: string) => void;
 }
 
-export const ProjectDropdown: FC<Props> = ({ project, organizationId, storage }) => {
+export const ProjectDropdown: FC<Props> = ({ project, organizationId, storage, isGitSyncEnabled }) => {
   const [isProjectSettingsModalOpen, setIsProjectSettingsModalOpen] =
     useState(false);
   const deleteProjectFetcher = useFetcher();
@@ -239,11 +241,24 @@ export const ProjectDropdown: FC<Props> = ({ project, organizationId, storage })
                         className="py-1 placeholder:italic w-full pl-2 pr-7 rounded-sm border border-solid border-[--hl-sm] bg-[--color-bg] text-[--color-font] focus:outline-none focus:ring-1 focus:ring-[--hl-md] transition-colors"
                       />
                     </TextField>
-                    <RadioGroup name="type" defaultValue={storage === ORG_STORAGE_RULE.CLOUD_PLUS_LOCAL ? project.remoteId ? 'remote' : 'local' : storage !== ORG_STORAGE_RULE.CLOUD_ONLY ? 'local' : 'remote'} className="flex flex-col gap-2">
+                    <RadioGroup name="type" defaultValue={getDefaultProjectType(storage, project)} className="flex flex-col gap-2">
                       <Label className="text-sm text-[--hl]">
                         Project type
                       </Label>
                       <div className="flex gap-2">
+                        <Radio
+                          isDisabled={!isGitSyncEnabled}
+                          value="git"
+                          className="flex-1 data-[selected]:border-[--color-surprise] data-[selected]:ring-2 data-[selected]:ring-[--color-surprise] data-[disabled]:opacity-25 hover:bg-[--hl-xs] focus:bg-[--hl-sm] border border-solid border-[--hl-md] rounded p-4 focus:outline-none transition-colors"
+                        >
+                          <div className='flex items-center gap-2'>
+                            <Icon icon={['fab', 'git-alt']} />
+                            <Heading className="text-lg font-bold">Git Sync</Heading>
+                          </div>
+                          <p className='pt-2'>
+                            Stored locally and synced to a Git repository. Ideal for version control and collaboration.
+                          </p>
+                        </Radio>
                         <Radio
                           isDisabled={storage === ORG_STORAGE_RULE.LOCAL_ONLY}
                           value="remote"
