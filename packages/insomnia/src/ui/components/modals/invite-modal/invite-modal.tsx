@@ -433,8 +433,6 @@ const MemberListItem: FC<{
     );
   };
 
-export const defaultPerPage = 10;
-
 interface PaginationBarProps {
   isPrevDisabled?: boolean;
   isNextDisabled?: boolean;
