@@ -464,7 +464,7 @@ const TestRoute: FC = () => {
             />
           )}
           {isCookieModalOpen && (
-            <CookiesModal onHide={() => setIsCookieModalOpen(false)} />
+            <CookiesModal isOpen={isCookieModalOpen} setIsOpen={setIsCookieModalOpen} />
           )}
           {isCertificatesModalOpen && (
             <CertificatesModal onClose={() => setCertificatesModalOpen(false)} />
