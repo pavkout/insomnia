@@ -53,7 +53,7 @@ test.describe('Cookie editor', async () => {
 
     // Check in the timeline that the cookie was sent
     await page.getByRole('tab', { name: 'Console' }).click();
-    await page.click('text=foo2=bar2; foo=b123ar;');
+    await page.click('text=foo2=bar2; foo=b123ar');
   });
 
 });
