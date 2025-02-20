@@ -1,3 +1,5 @@
+import { expect } from '@playwright/test';
+
 import { loadFixture } from '../../playwright/paths';
 import { test } from '../../playwright/test';
 
@@ -44,7 +46,7 @@ test.describe('Cookie editor', async () => {
 
     // Check in the timeline that the cookie was sent
     await page.getByRole('tab', { name: 'Console' }).click();
-    await page.getByText('foo2=bar2; foo=b123ar').click();
+    await expect(page.getByText('foo2=bar2; foo=b123ar')).toBeVisible();
 
     // Send ws request
     await page.getByLabel('Request Collection').getByTestId('example websocket').press('Enter');
@@ -53,7 +55,6 @@ test.describe('Cookie editor', async () => {
 
     // Check in the timeline that the cookie was sent
     await page.getByRole('tab', { name: 'Console' }).click();
-    await page.getByText('foo2=bar2; foo=b123ar').click();
+    await expect(page.getByText('foo2=bar2; foo=b123ar')).toBeVisible();
   });
-
 });
