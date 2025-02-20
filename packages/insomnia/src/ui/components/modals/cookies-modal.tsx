@@ -20,6 +20,16 @@ import { RenderedText } from '../rendered-text';
 // https://github.com/salesforce/tough-cookie/blob/5ae97c6a28122f3fb309adcd8428274d9b2bd795/lib/cookie.js#L77
 const MAX_TIME = 2147483647000;
 const ItemsPerPage = 5;
+const DefaultCookie: Cookie = {
+  id: uuidv4(),
+  key: 'foo',
+  value: 'bar',
+  domain: 'domain.com',
+  expires: MAX_TIME as unknown as Date,
+  path: '/',
+  secure: false,
+  httpOnly: false,
+};
 
 export function chunkArray<T>(array: T[], chunkSize: number = ItemsPerPage): T[][] {
   const chunks: T[][] = [];
@@ -45,12 +55,14 @@ export const CookiesModal = ({ isOpen, setIsOpen }: Props) => {
   const [filter, setFilter] = useState<string>('');
   const [filteredCookies, setFilteredCookies] = useState<Cookie[][]>(chunkArray(activeCookieJar?.cookies || []));
 
-  const updateCookieJar = async (cookieJarId: string, patch: CookieJar) => {
+  const updateCookieJar = (cookieJarId: string, patch: CookieJar) => {
     updateCookieJarFetcher.submit(JSON.stringify({ patch, cookieJarId }), {
       encType: 'application/json',
       method: 'post',
       action: `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/cookieJar/update`,
     });
+
+    setFilteredCookies(chunkArray(patch.cookies));
   };
 
   const handleFilterChange = async (value: string) => {
@@ -79,6 +91,50 @@ export const CookiesModal = ({ isOpen, setIsOpen }: Props) => {
     });
 
     setFilteredCookies(chunkArray(filteredCookies));
+  };
+
+  const handleCookieDelete = (cookieId: string) => {
+    const updatedActiveCookieJar = activeCookieJar;
+    updatedActiveCookieJar.cookies = activeCookieJar.cookies.filter(c => c.id !== cookieId);
+    updateCookieJar(activeCookieJar._id, updatedActiveCookieJar);
+  };
+
+  const handleDeleteAll = () => {
+    const updatedActiveCookieJar = activeCookieJar;
+    updatedActiveCookieJar.cookies = [];
+
+    updateCookieJar(activeCookieJar._id, updatedActiveCookieJar);
+  };
+
+  const handleAddCookie = () => {
+    const updatedActiveCookieJar = activeCookieJar;
+    updatedActiveCookieJar.cookies = [DefaultCookie, ...activeCookieJar.cookies];
+
+    updateCookieJar(activeCookieJar._id, updatedActiveCookieJar);
+  };
+
+  const handleCookieUpdate = (cookie: Cookie) => {
+    const newCookie = clone(cookie);
+
+    // transform to Date object or fallback to null
+    let dateFormat = null;
+
+    if (newCookie.expires && isValid(new Date(newCookie.expires))) {
+      dateFormat = new Date(newCookie.expires);
+    }
+    newCookie.expires = dateFormat;
+
+    // Clone so we don't modify the original
+    const cookieJar = clone(activeCookieJar);
+    const index = activeCookieJar.cookies.findIndex(c => c.id === cookie.id);
+
+    if (index < 0) {
+      console.warn(`Could not find cookie with id=${cookie.id} to edit`);
+      return;
+    }
+
+    cookieJar.cookies = [...cookieJar.cookies.slice(0, index), newCookie, ...cookieJar.cookies.slice(index + 1)];
+    updateCookieJar(cookieJar._id, cookieJar);
   };
 
   return (
@@ -124,33 +180,14 @@ export const CookiesModal = ({ isOpen, setIsOpen }: Props) => {
                     <div className="flex gap-4 items-end">
                       <Button
                         className="flex items-center gap-2 min-w-[75px] py-1 px-2 font-semibold aria-pressed:bg-[--hl-sm] text-[--color-font] transition-all text-sm"
-                        onPress={() => {
-                          const updated = activeCookieJar;
-
-                          updated.cookies = [{
-                            id: uuidv4(),
-                            key: 'foo',
-                            value: 'bar',
-                            domain: 'domain.com',
-                            expires: MAX_TIME as unknown as Date,
-                            path: '/',
-                            secure: false,
-                            httpOnly: false,
-                          }, ...activeCookieJar.cookies];
-
-                          updateCookieJar(activeCookieJar._id, updated);
-                        }}
+                        onPress={handleAddCookie}
                       >
                         <Icon icon="plus" /> Add Cookie
                       </Button>
                       <PromptButton
                         className="flex items-center gap-2 min-w-[85px] py-1 px-2 font-semibold aria-pressed:bg-[--hl-sm] text-[--color-font] transition-all text-sm"
                         confirmMessage='Confirm'
-                        onClick={() => {
-                          const updated = activeCookieJar;
-                          updated.cookies = [];
-                          updateCookieJar(activeCookieJar._id, updated);
-                        }}
+                        onClick={handleDeleteAll}
                       >
                         <Icon icon="trash" /> Delete All
                       </PromptButton>
@@ -165,11 +202,8 @@ export const CookiesModal = ({ isOpen, setIsOpen }: Props) => {
                       <>
                         <CookieList
                           cookies={filteredCookies[page] || []}
-                          handleCookieDelete={cookie => {
-                            const updated = activeCookieJar;
-                            updated.cookies = activeCookieJar.cookies.filter(c => c.id !== cookie.id);
-                            updateCookieJar(activeCookieJar._id, updated);
-                          }}
+                          onCookieDelete={handleCookieDelete}
+                          onUpdateCookie={handleCookieUpdate}
                         />
                         <PaginationBar
                           isPrevDisabled={page === 0}
@@ -210,13 +244,15 @@ export const CookiesModal = ({ isOpen, setIsOpen }: Props) => {
 
 export interface CookieListProps {
   cookies: Cookie[];
-  handleCookieDelete: (cookie: Cookie) => void;
+  onCookieDelete: (cookieId: string) => void;
+  onUpdateCookie: (cookie: Cookie) => void;
 }
 
-const CookieList = ({ cookies, handleCookieDelete }: CookieListProps) => {
-  const [isCookieModalOpen, setIsCookieModalOpen] = useState(false);
+const CookieList = ({ cookies, onCookieDelete, onUpdateCookie }: CookieListProps) => {
+  const [cookieToEdit, setCookieToEdit] = useState<Cookie | null>(null);
 
   return (
+    <>
     <ListBox
       aria-label="Cookies list"
       className="flex flex-col w-full min-h-[200px]"
@@ -242,32 +278,31 @@ const CookieList = ({ cookies, handleCookieDelete }: CookieListProps) => {
             <div className='flex gap-1 min-w-[10%] items-center justify-end'>
               <Button
                 className="flex items-center gap-2 min-w-[35px] py-1 px-2 justify-center font-semibold aria-pressed:bg-[--hl-sm] text-[--color-font] transition-all text-sm"
-
-                onPress={() => setIsCookieModalOpen(true)}
+                onPress={() => setCookieToEdit(cookie)}
               >
                 Edit
               </Button>
               <PromptButton
                 className="flex items-center gap-2 min-w-[15px] py-1 px-2 font-semibold aria-pressed:bg-[--hl-sm] text-[--color-font] transition-all text-sm"
-
                 confirmMessage=""
-                onClick={() => handleCookieDelete(cookie)}
+                doneMessage=''
+                onClick={() => onCookieDelete(cookie.id)}
                 title="Delete cookie"
               >
                 <i className="fa fa-trash-o" />
               </PromptButton>
-              {isCookieModalOpen && (
-                <CookieModifyModal
-                  cookie={cookie}
-                  isOpen={isCookieModalOpen}
-                  setIsOpen={setIsCookieModalOpen}
-                />
-              )}
             </div>
           </ListBoxItem>
         );
       })}
     </ListBox>
+      {cookieToEdit && <CookieModifyModal
+        isOpen={cookieToEdit !== null}
+        cookie={cookieToEdit as Cookie}
+        setIsOpen={() => setCookieToEdit(null)}
+        onUpdateCookie={onUpdateCookie}
+      />}
+    </>
   );
 };
 
@@ -321,51 +356,11 @@ interface CookieModifyModalProps {
   cookie: Cookie;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  onUpdateCookie: (cookie: Cookie) => void;
 }
 
-const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProps) => {
-
-  const [editCookie, setEditCookie] = useState<Cookie | null>(cookie);
-  const { activeCookieJar } = useRouteLoaderData(':workspaceId') as WorkspaceLoaderData;
-  const { organizationId, projectId, workspaceId } = useParams<{ organizationId: string; projectId: string; workspaceId: string }>();
-  const updateCookieJarFetcher = useFetcher<CookieJar>();
-
-  const updateCookieJar = async (cookieJarId: string, patch: CookieJar) => {
-    updateCookieJarFetcher.submit(JSON.stringify({ patch, cookieJarId }), {
-      encType: 'application/json',
-      method: 'post',
-      action: `/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/cookieJar/update`,
-    });
-  };
-
-  const handleCookieUpdate = async (nextCookie: Cookie) => {
-    if (!editCookie) {
-      return;
-    }
-
-    const newCookie = clone(nextCookie);
-
-    // transform to Date object or fallback to null
-    let dateFormat = null;
-
-    if (newCookie.expires && isValid(new Date(newCookie.expires))) {
-      dateFormat = new Date(newCookie.expires);
-    }
-    newCookie.expires = dateFormat;
-    setEditCookie(newCookie);
-
-    // Clone so we don't modify the original
-    const cookieJar = clone(activeCookieJar);
-    const index = activeCookieJar.cookies.findIndex(c => c.id === editCookie.id);
-
-    if (index < 0) {
-      console.warn(`Could not find cookie with id=${editCookie.id} to edit`);
-      return;
-    }
-
-    cookieJar.cookies = [...cookieJar.cookies.slice(0, index), newCookie, ...cookieJar.cookies.slice(index + 1)];
-    updateCookieJar(cookieJar._id, cookieJar);
-  };
+const CookieModifyModal = (({ cookie, isOpen, setIsOpen, onUpdateCookie }: CookieModifyModalProps) => {
+  const [editCookie, setEditCookie] = useState<Cookie>(cookie);
 
   let localDateTime: string;
   if (editCookie && editCookie.expires && isValid(new Date(editCookie.expires))) {
@@ -396,7 +391,7 @@ const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProp
         <Dialog className="outline-none relative">
           {({ close }) => (
             <>
-              {activeCookieJar && editCookie && (
+              {editCookie && (
                 <>
                   <div className="flex flex-col gap-4">
                     <Heading slot="title" className="text-[22px] leading-[34px] mb-[14px]">
@@ -427,7 +422,7 @@ const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProp
                               <OneLineEditor
                                 id="cookie-key"
                                 defaultValue={(editCookie && editCookie.key || '').toString()}
-                                onChange={value => handleCookieUpdate({ ...editCookie, key: value.trim() })}
+                                onChange={value => setEditCookie({ ...editCookie, key: value.trim() })}
                               />
                             </label>
                           </div>
@@ -437,7 +432,7 @@ const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProp
                               <OneLineEditor
                                 id="cookie-value"
                                 defaultValue={(editCookie && editCookie.value || '').toString()}
-                                onChange={value => handleCookieUpdate({ ...editCookie, value: value.trim() })}
+                                onChange={value => setEditCookie({ ...editCookie, value: value.trim() })}
                               />
                             </label>
                           </div>
@@ -449,7 +444,7 @@ const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProp
                               <OneLineEditor
                                 id="cookie-domain"
                                 defaultValue={(editCookie && editCookie.domain || '').toString()}
-                                onChange={value => handleCookieUpdate({ ...editCookie, domain: value.trim() })}
+                                onChange={value => setEditCookie({ ...editCookie, domain: value.trim() })}
                               />
                             </label>
                           </div>
@@ -459,7 +454,7 @@ const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProp
                               <OneLineEditor
                                 id="cookie-path"
                                 defaultValue={(editCookie && editCookie.path || '').toString()}
-                                onChange={value => handleCookieUpdate({ ...editCookie, path: value.trim() })}
+                                onChange={value => setEditCookie({ ...editCookie, path: value.trim() })}
                               />
                             </label>
                           </div>
@@ -471,7 +466,7 @@ const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProp
                               type="datetime-local"
                               defaultValue={localDateTime}
                               className='calendar-invert'
-                              onChange={event => handleCookieUpdate({ ...editCookie, expires: event.target.value })}
+                              onChange={event => setEditCookie({ ...editCookie, expires: event.target.value })}
                             />
                           </label>
                         </div>
@@ -482,7 +477,7 @@ const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProp
                               type="checkbox"
                               name="secure"
                               defaultChecked={editCookie.secure || false}
-                              onChange={event => handleCookieUpdate({ ...editCookie, secure: event.target.checked })}
+                              onChange={event => setEditCookie({ ...editCookie, secure: event.target.checked })}
                             />
                             Secure
                           </label>
@@ -492,7 +487,7 @@ const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProp
                               type="checkbox"
                               name="httpOnly"
                               defaultChecked={editCookie.httpOnly || false}
-                              onChange={event => handleCookieUpdate({ ...editCookie, httpOnly: event.target.checked })}
+                              onChange={event => setEditCookie({ ...editCookie, httpOnly: event.target.checked })}
                             />
                             httpOnly
                           </label>
@@ -511,7 +506,7 @@ const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProp
                                   if (parsed) {
                                     // Make sure cookie has an id
                                     parsed.id = editCookie.id;
-                                    handleCookieUpdate(parsed as Cookie);
+                                    setEditCookie(parsed as Cookie);
                                   }
                                 } catch (err) {
                                   console.warn(`Failed to parse cookie string "${event.target.value}"`, err);
@@ -530,7 +525,10 @@ const CookieModifyModal = (({ cookie, isOpen, setIsOpen }: CookieModifyModalProp
               <div className='flex items-center justify-end mt-[2rem]'>
                 <Button
                   className="text-[--color-font-surprise] font-semibold border border-solid border-[--hl-md] bg-opacity-100 bg-[rgba(var(--color-surprise-rgb),var(--tw-bg-opacity))] px-4 py-2 h-full flex items-center justify-center gap-2 aria-pressed:opacity-80 rounded-md hover:bg-opacity-80 focus:ring-inset ring-1 ring-transparent focus:ring-[--hl-md] transition-all text-sm"
-                  onPress={close}
+                  onPress={() => {
+                    onUpdateCookie(editCookie as Cookie);
+                    setIsOpen(false);
+                  }}
                 >
                   Done
                 </Button>
