@@ -991,7 +991,7 @@ const Design: FC = () => {
             />
           )}
           {isCookieModalOpen && (
-            <CookiesModal isOpen={isCookieModalOpen} setIsOpen={setIsCookieModalOpen} />
+            <CookiesModal setIsOpen={setIsCookieModalOpen} />
           )}
           {isCertificatesModalOpen && (
             <CertificatesModal onClose={() => setCertificatesModalOpen(false)} />

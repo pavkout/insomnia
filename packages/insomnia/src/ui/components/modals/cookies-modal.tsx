@@ -40,11 +40,10 @@ export function chunkArray<T>(array: T[], chunkSize: number = ItemsPerPage): T[]
 }
 
 interface Props {
-  isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
 }
 
-export const CookiesModal = ({ isOpen, setIsOpen }: Props) => {
+export const CookiesModal = ({ setIsOpen }: Props) => {
   const { handleRender } = useNunjucks();
 
   const { organizationId, projectId, workspaceId } = useParams<{ organizationId: string; projectId: string; workspaceId: string }>();
@@ -140,7 +139,7 @@ export const CookiesModal = ({ isOpen, setIsOpen }: Props) => {
   return (
     <ModalOverlay
       isDismissable={true}
-      isOpen={isOpen}
+      isOpen={true}
       onOpenChange={setIsOpen}
       className="w-full h-[--visual-viewport-height] fixed z-10 top-0 left-0 flex items-center justify-center bg-[--color-bg] theme--transparent-overlay"
     >

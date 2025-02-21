@@ -65,7 +65,7 @@ export const ResponseCookiesViewer: FC<Props> = props => {
       </button>
     </p>
     {isCookieModalOpen && (
-      <CookiesModal isOpen={isCookieModalOpen} setIsOpen={setIsCookieModalOpen} />
+      <CookiesModal setIsOpen={setIsCookieModalOpen} />
     )}
   </div>;
 };
