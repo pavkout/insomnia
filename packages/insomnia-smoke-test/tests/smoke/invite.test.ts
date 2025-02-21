@@ -31,9 +31,9 @@ test('Can invite users in app', async ({ page }) => {
 
   // Delete the member
   await page.getByTestId('collaborator-test-iteration-3').getByRole('button').nth(2).click();
-  await page.getByRole('button', { name: ' Confirm' }).click();
+  await page.getByRole('button', { name: 'Confirm' }).click();
 
   // Unlink the team
   await page.getByTestId('collaborator-test-iteration-0').getByRole('button', { name: 'Remove' }).click();
-  await page.getByRole('button', { name: ' Confirm' }).click();
+  await page.getByRole('button', { name: 'Confirm' }).click();
 });
