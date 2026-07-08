@@ -215,7 +215,9 @@ export const ProjectSettingsForm: FC<Props> = ({
       return;
     }
     // Move into `<chosen-parent>/<repo-name>`, matching the clone flow.
-    const folderName = deriveRepoName(gitRepository.uri) || gitRepository._id;
+    const folderName = gitRepository.directory
+      ? window.path.basename(gitRepository.directory)
+      : deriveRepoName(gitRepository.uri) || gitRepository._id;
     const newDirectory = window.path.join(picked.filePath, folderName);
 
     setError(null);
